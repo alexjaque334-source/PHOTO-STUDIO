@@ -6,11 +6,11 @@
 import type { EditJobMessage, WebhookMessage } from './contracts';
 
 export interface Env {
-  // Bindings
+  // Bindings (D1 e ASSETS obrigatórios; MEDIA e QUEUES opcionais para suporte a Cloudflare Free sem cartão)
   DB: D1Database;
-  MEDIA: R2Bucket;
-  EDIT_QUEUE: Queue<EditJobMessage>;
-  WEBHOOK_QUEUE: Queue<WebhookMessage>;
+  MEDIA?: R2Bucket;
+  EDIT_QUEUE?: Queue<EditJobMessage>;
+  WEBHOOK_QUEUE?: Queue<WebhookMessage>;
   ASSETS: Fetcher;
 
   // Vars

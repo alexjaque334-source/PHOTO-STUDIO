@@ -10,6 +10,7 @@ import { errorHandler, requestId } from './lib/http';
 // Segurança (Subagente Segurança/LGPD)
 import { securityHeaders } from './security/headers';
 import { csrfProtection } from './security/csrf';
+import { ensureDatabaseSchema } from './db/auto-migrate';
 
 // Backend
 import authRoutes from './routes/auth';
@@ -38,6 +39,12 @@ const app = new Hono<AppContext>();
 app.use('*', requestId());
 app.use('/api/*', securityHeaders());
 app.use('/api/*', csrfProtection()); // isenta /api/webhooks/* (autenticação por token)
+app.use('/api/*', async (c, next) => {
+  if (c.env.DB) {
+    await ensureDatabaseSchema(c.env.DB);
+  }
+  await next();
+});
 
 app.get('/api/health', (c) => c.json({ ok: true, env: c.env.ENVIRONMENT }));
 

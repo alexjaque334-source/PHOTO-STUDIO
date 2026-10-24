@@ -1,8 +1,7 @@
-# ALEGON AI Photo Studio — Worker único (API + assets estáticos do frontend)
-# Dono: Subagente Cloudflare/DevOps. Outros agentes: solicitar alterações via Tech Lead.
-name = "alegon-photo-studio"
+# ALEGON AI Photo Studio — Cloudflare Workers (Modo Free Tier 100% Gratuito)
+name = "photo-studio"
 main = "src/index.ts"
-compatibility_date = "2025-06-01"
+compatibility_date = "2026-10-24"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
@@ -12,8 +11,9 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 
 [vars]
-ENVIRONMENT = "development"
-APP_URL = "http://localhost:5173"
+ENVIRONMENT = "production"
+APP_URL = "https://photo-studio.pages.dev"
+ADMIN_EMAILS = "apacessoria25@gmail.com"
 ASAAS_BASE_URL = "https://api-sandbox.asaas.com/v3"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
@@ -21,149 +21,12 @@ EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
 [[d1_databases]]
 binding = "DB"
 database_name = "alegon-photo-db"
-database_id = "00000000-0000-0000-0000-000000000000" # Local miniflare não precisa de ID real
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
-[[r2_buckets]]
-binding = "MEDIA"
-bucket_name = "alegon-photo-media"
-
-[[queues.producers]]
-binding = "EDIT_QUEUE"
-queue = "alegon-edit-jobs"
-
-[[queues.producers]]
-binding = "WEBHOOK_QUEUE"
-queue = "alegon-asaas-webhooks"
-
-[[queues.consumers]]
-queue = "alegon-edit-jobs"
-max_batch_size = 1
-max_retries = 2
-dead_letter_queue = "alegon-edit-jobs-dlq"
-
-[[queues.consumers]]
-queue = "alegon-asaas-webhooks"
-max_batch_size = 10
-max_retries = 5
-dead_letter_queue = "alegon-asaas-webhooks-dlq"
-
 [triggers]
-# retenção 90 dias + avisos de expiração (03:00 UTC) e manutenção (reservas expiradas, reconciliação) a cada 15 min
 crons = ["0 3 * * *", "*/15 * * * *"]
 
 [observability]
-enabled = true
-head_sampling_rate = 1
-
-# ==============================================================================
-# AMBIENTE: STAGING (Homologação / Testes)
-# ==============================================================================
-[env.staging]
-name = "alegon-photo-studio-staging"
-
-[env.staging.assets]
-directory = "../web/dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-run_worker_first = ["/api/*"]
-
-[env.staging.vars]
-ENVIRONMENT = "staging"
-APP_URL = "https://staging.alegon.com.br"
-ASAAS_BASE_URL = "https://api-sandbox.asaas.com/v3"
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-EMAIL_FROM = "ALEGON AI Photo Studio (Staging) <staging-nao-responda@alegon.com.br>"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "alegon-photo-db-staging"
-database_id = "00000000-0000-0000-0000-000000000001" # substituir pelo ID gerado via `wrangler d1 create`
-migrations_dir = "migrations"
-
-[[env.staging.r2_buckets]]
-binding = "MEDIA"
-bucket_name = "alegon-photo-media-staging"
-
-[[env.staging.queues.producers]]
-binding = "EDIT_QUEUE"
-queue = "alegon-edit-jobs-staging"
-
-[[env.staging.queues.producers]]
-binding = "WEBHOOK_QUEUE"
-queue = "alegon-asaas-webhooks-staging"
-
-[[env.staging.queues.consumers]]
-queue = "alegon-edit-jobs-staging"
-max_batch_size = 1
-max_retries = 2
-dead_letter_queue = "alegon-edit-jobs-dlq-staging"
-
-[[env.staging.queues.consumers]]
-queue = "alegon-asaas-webhooks-staging"
-max_batch_size = 10
-max_retries = 5
-dead_letter_queue = "alegon-asaas-webhooks-dlq-staging"
-
-[env.staging.triggers]
-crons = ["0 3 * * *", "*/15 * * * *"]
-
-[env.staging.observability]
-enabled = true
-head_sampling_rate = 1
-
-# ==============================================================================
-# AMBIENTE: PRODUCTION (Produção)
-# ==============================================================================
-[env.production]
-name = "alegon-photo-studio"
-
-[env.production.assets]
-directory = "../web/dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-run_worker_first = ["/api/*"]
-
-[env.production.vars]
-ENVIRONMENT = "production"
-APP_URL = "https://studio.alegon.com.br"
-ASAAS_BASE_URL = "https://api.asaas.com/v3"
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "alegon-photo-db-production"
-database_id = "00000000-0000-0000-0000-000000000002" # substituir pelo ID gerado via `wrangler d1 create`
-migrations_dir = "migrations"
-
-[[env.production.r2_buckets]]
-binding = "MEDIA"
-bucket_name = "alegon-photo-media-production"
-
-[[env.production.queues.producers]]
-binding = "EDIT_QUEUE"
-queue = "alegon-edit-jobs"
-
-[[env.production.queues.producers]]
-binding = "WEBHOOK_QUEUE"
-queue = "alegon-asaas-webhooks"
-
-[[env.production.queues.consumers]]
-queue = "alegon-edit-jobs"
-max_batch_size = 1
-max_retries = 2
-dead_letter_queue = "alegon-edit-jobs-dlq"
-
-[[env.production.queues.consumers]]
-queue = "alegon-asaas-webhooks"
-max_batch_size = 10
-max_retries = 5
-dead_letter_queue = "alegon-asaas-webhooks-dlq"
-
-[env.production.triggers]
-crons = ["0 3 * * *", "*/15 * * * *"]
-
-[env.production.observability]
 enabled = true
 head_sampling_rate = 1

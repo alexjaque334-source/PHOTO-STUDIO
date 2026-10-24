@@ -1,4 +1,6 @@
-# ALEGON AI Photo Studio — Configuração Cloudflare Workers na raiz
+# ALEGON AI Photo Studio — Cloudflare Workers (Modo Free Tier 100% Gratuito)
+# Dono: Tech Lead
+# Zero dependência de R2 ou Queues pagas — armazenamento no D1 e processamento nativo assíncrono
 name = "photo-studio"
 main = "apps/api/src/index.ts"
 compatibility_date = "2026-10-24"
@@ -12,7 +14,8 @@ run_worker_first = ["/api/*"]
 
 [vars]
 ENVIRONMENT = "production"
-APP_URL = "https://alegon.com.br"
+APP_URL = "https://photo-studio.pages.dev"
+ADMIN_EMAILS = "apacessoria25@gmail.com"
 ASAAS_BASE_URL = "https://api-sandbox.asaas.com/v3"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
@@ -22,30 +25,6 @@ binding = "DB"
 database_name = "alegon-photo-db"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "apps/api/migrations"
-
-[[r2_buckets]]
-binding = "MEDIA"
-bucket_name = "alegon-photo-media"
-
-[[queues.producers]]
-binding = "EDIT_QUEUE"
-queue = "alegon-edit-jobs"
-
-[[queues.producers]]
-binding = "WEBHOOK_QUEUE"
-queue = "alegon-asaas-webhooks"
-
-[[queues.consumers]]
-queue = "alegon-edit-jobs"
-max_batch_size = 1
-max_retries = 2
-dead_letter_queue = "alegon-edit-jobs-dlq"
-
-[[queues.consumers]]
-queue = "alegon-asaas-webhooks"
-max_batch_size = 10
-max_retries = 5
-dead_letter_queue = "alegon-asaas-webhooks-dlq"
 
 [triggers]
 crons = ["0 3 * * *", "*/15 * * * *"]
