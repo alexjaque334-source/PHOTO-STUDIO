@@ -40,7 +40,7 @@ export const PlansPage: React.FC = () => {
   const { user, refreshWallet } = useAuth();
   const { success, error, info } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'packs' | 'plans'>('packs');
+  const [activeTab, setActiveTab] = useState<'plans' | 'packs'>('plans');
   const [products, setProducts] = useState<BillingProduct[]>([]);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,11 +72,20 @@ export const PlansPage: React.FC = () => {
       .then((res) => {
         if (!isMounted) return;
         setProducts(res.products || []);
-        setPlans(res.plans || []);
+        if (res.plans && res.plans.length > 0) {
+          setPlans(
+            res.plans.map((p: any) => ({
+              code: p.code,
+              name: p.name,
+              description: p.description,
+              monthlyCredits: p.monthlyCredits ?? p.monthly_credits ?? 0,
+              priceCents: p.priceCents ?? p.price_cents ?? 0,
+            }))
+          );
+        }
       })
       .catch((err) => {
-        console.warn('Falha no catálogo da API, usando catálogo canônico local:', err);
-        // Catálogo canônico fallback caso a API ainda não esteja semeada
+        console.warn('Falha no catálogo da API, usando catálogo canônico sincronizado:', err);
         setProducts([
           {
             code: 'single_edit',
@@ -88,38 +97,54 @@ export const PlansPage: React.FC = () => {
             creditValidityDays: 30,
           },
           {
-            code: 'pack_creator',
+            code: 'pack_inicial',
             kind: 'credit_pack',
-            name: 'Pacote Creator',
-            description: '50 créditos válidos por 1 ano. Ideal para criadores.',
-            credits: 50,
+            name: 'Pacote Inicial',
+            description: '5 créditos válidos por 1 ano.',
+            credits: 5,
+            priceCents: 1990,
+            creditValidityDays: 365,
+          },
+          {
+            code: 'pack_criador',
+            kind: 'credit_pack',
+            name: 'Pacote Criador',
+            description: '12 créditos válidos por 1 ano.',
+            credits: 12,
             priceCents: 3990,
             creditValidityDays: 365,
           },
           {
-            code: 'pack_pro',
+            code: 'pack_profissional',
             kind: 'credit_pack',
-            name: 'Pacote Pro',
-            description: '100 créditos válidos por 1 ano. Maior custo-benefício.',
-            credits: 100,
-            priceCents: 6990,
+            name: 'Pacote Profissional',
+            description: '20 créditos válidos por 1 ano.',
+            credits: 20,
+            priceCents: 5990,
             creditValidityDays: 365,
           },
         ]);
         setPlans([
           {
-            code: 'plan_studio',
-            name: 'Assinatura Studio Pro',
-            description: '150 créditos mensais com prioridade máxima de fila.',
-            monthlyCredits: 150,
-            priceCents: 7990,
+            code: 'pessoal',
+            name: 'Plano Pessoal',
+            description: '15 créditos mensais para criadores individuais e fotos pessoais.',
+            monthlyCredits: 15,
+            priceCents: 2990,
           },
           {
-            code: 'plan_agency',
-            name: 'Assinatura Agência & E-commerce',
-            description: '400 créditos mensais com suporte VIP e acesso antecipado.',
-            monthlyCredits: 400,
-            priceCents: 17990,
+            code: 'pro',
+            name: 'Plano Pro',
+            description: '40 créditos mensais para lojas virtuais, fotógrafos e produção contínua.',
+            monthlyCredits: 40,
+            priceCents: 6990,
+          },
+          {
+            code: 'business',
+            name: 'Plano Business',
+            description: '100 créditos mensais com maior economia por imagem para marcas e agências.',
+            monthlyCredits: 100,
+            priceCents: 14990,
           },
         ]);
       })
@@ -308,9 +333,9 @@ export const PlansPage: React.FC = () => {
 
       {/* Catálogo de Assinaturas */}
       {activeTab === 'plans' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {plans.map((plan, idx) => {
-            const isStudio = plan.code === 'plan_studio';
+        <div className={`grid ${plans.length <= 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl' : 'grid-cols-1 md:grid-cols-3 max-w-5xl'} gap-6 mx-auto`}>
+          {plans.map((plan) => {
+            const isPopular = plan.code === 'pro' || plan.name?.toLowerCase().includes('pro');
             const priceFormatted = (plan.priceCents / 100).toLocaleString('pt-BR', {
               style: 'currency',
               currency: 'BRL',
@@ -324,12 +349,13 @@ export const PlansPage: React.FC = () => {
                 priceFormatted={priceFormatted}
                 periodLabel="por mês"
                 creditsLabel={`${plan.monthlyCredits} Créditos / mês`}
-                isPopular={isStudio}
+                isPopular={isPopular}
                 features={[
                   `${plan.monthlyCredits} créditos renovados a cada ciclo`,
-                  'Prioridade máxima na fila de IA',
+                  'Todas as 14 ferramentas de IA generativa',
+                  'Prioridade na fila de renderização',
                   'Histórico não-destrutivo completo',
-                  'Download sem perdas de compactação',
+                  'Downloads de alta resolução (PNG, JPG, WebP)',
                   'Cancelamento transparente a qualquer momento',
                 ]}
                 buttonText="Assinar Plano Mensal"

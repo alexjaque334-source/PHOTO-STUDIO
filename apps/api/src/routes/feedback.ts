@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppContext } from '../env';
 import { newId, nowIso, parseJson } from '../lib/http';
-import { getSessionFromCookie } from '../auth/session';
+import { getSessionTokenFromCookie } from '../auth/session';
 import { queryOne } from '../db';
 
 const feedbackRoutes = new Hono<AppContext>();
@@ -19,14 +19,14 @@ const FeedbackSchema = z.object({
 });
 
 feedbackRoutes.post('/', async (c) => {
-  const body = await parseJson(c.req.raw, FeedbackSchema);
+  const body = await parseJson(c, FeedbackSchema);
 
   // Tenta obter usuário autenticado via sessão
   let userId: string | null = null;
   let userEmail = body.email || 'assinante@photostudio.ai';
   let userName = body.name || 'Assinante Studio';
 
-  const sessionToken = getSessionFromCookie(c.req.raw.headers.get('Cookie'));
+  const sessionToken = getSessionTokenFromCookie(c);
   if (sessionToken && c.env.DB) {
     try {
       const sessionUser = await queryOne<{ id: string; email: string; full_name: string | null }>(
