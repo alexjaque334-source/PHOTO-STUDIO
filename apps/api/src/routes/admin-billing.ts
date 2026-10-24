@@ -176,6 +176,99 @@ adminBillingApp.put('/plans/:id', async (c) => {
   return c.json({ ok: true, id: planId });
 });
 
+const createPlanSchema = z.object({
+  code: z.string().min(2).max(50),
+  name: z.string().min(2).max(100),
+  description: z.string().optional(),
+  priceCents: z.number().int().positive(),
+  monthlyCredits: z.number().int().positive(),
+  active: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+});
+
+adminBillingApp.post('/plans', async (c) => {
+  const admin = c.get('user');
+  const body = await parseJson(c, createPlanSchema);
+  const db = c.env.DB;
+
+  const planId = newId();
+  const now = nowIso();
+  const cleanCode = body.code.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '_');
+
+  await db
+    .prepare(
+      `INSERT INTO plans (id, code, name, description, monthly_credits, price_cents, cycle, active, sort_order, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, 'MONTHLY', ?, ?, ?, ?)`,
+    )
+    .bind(
+      planId,
+      cleanCode,
+      body.name.trim(),
+      body.description?.trim() ?? null,
+      body.monthlyCredits,
+      body.priceCents,
+      body.active ? 1 : 0,
+      body.sortOrder,
+      now,
+      admin.id,
+    )
+    .run();
+
+  await audit(c.env, {
+    actorUserId: admin.id,
+    actorType: 'admin',
+    action: 'admin.plans.create',
+    targetType: 'plan',
+    targetId: planId,
+    metadata: { code: cleanCode, name: body.name },
+  });
+
+  return c.json({
+    ok: true,
+    plan: {
+      id: planId,
+      code: cleanCode,
+      name: body.name.trim(),
+      description: body.description?.trim() ?? null,
+      monthly_credits: body.monthlyCredits,
+      price_cents: body.priceCents,
+      cycle: 'MONTHLY',
+      active: body.active ? 1 : 0,
+      sort_order: body.sortOrder,
+      updated_at: now,
+      updated_by: admin.id,
+    },
+  }, 201);
+});
+
+adminBillingApp.delete('/plans/:id', async (c) => {
+  const admin = c.get('user');
+  const planId = c.req.param('id');
+  const db = c.env.DB;
+
+  const current = await db
+    .prepare('SELECT id, code, name FROM plans WHERE id = ?')
+    .bind(planId)
+    .first<{ id: string; code: string; name: string }>();
+
+  if (!current) {
+    throw new DomainError('PLAN_NOT_FOUND', 'Plano não encontrado.', 404);
+  }
+
+  await db.prepare('DELETE FROM plans WHERE id = ?').bind(planId).run();
+
+  await audit(c.env, {
+    actorUserId: admin.id,
+    actorType: 'admin',
+    action: 'admin.plans.delete',
+    targetType: 'plan',
+    targetId: planId,
+    metadata: { code: current.code, name: current.name },
+  });
+
+  return c.json({ ok: true, id: planId, message: 'Plano excluído com sucesso.' });
+});
+
 // ───────────────────────────── Listagem Geral de Pagamentos ─────────────────────────────
 adminBillingApp.get('/payments', async (c) => {
   const cursor = c.req.query('cursor') ?? null;

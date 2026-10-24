@@ -401,115 +401,93 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Seção 5: Preços e Planos */}
+      {/* Seção 5: Preços e Planos (100% Sincronizado com Painel Admin) */}
       <section id="precos" className="py-20 border-b border-border/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <Badge variant="gold" className="gap-1.5">
               <Coins className="h-3.5 w-3.5" />
-              Preços Transparentes
+              Planos Oficiais & Preços
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Comece Avulso ou Economize com Pacotes</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Escolha o Plano Ideal para seu Fluxo de Criação</h2>
             <p className="text-sm text-muted-foreground">
-              Sem taxas escondidas. 1 crédito = 1 edição fotográfica completa no Tier Padrão.
+              Créditos mensais cumulativos, acesso irrestrito às 14 ferramentas de IA e garantia de cancelamento sem fidelidade.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {/* Avulso */}
-            <PriceCard
-              name="Edição Avulsa"
-              description="Ideal para testar uma edição pontual sem compromisso."
-              priceFormatted="R$ 7,90"
-              periodLabel="por edição"
-              creditsLabel="1 Crédito de IA"
-              features={[
-                '1 edição em alta definição',
-                'Validade de 30 dias',
-                'Todas as 14 ferramentas',
-                'Retenção privativa de 90 dias',
-                'Download em PNG, JPG e WebP',
-              ]}
-              buttonText="Comprar Avulso"
-              onSelect={() => navigate('/auth/register')}
-            />
+          {/* Grade Dinâmica de Planos do Catálogo */}
+          {(() => {
+            const fallbackPlans = [
+              {
+                id: 'plan_pessoal',
+                code: 'pessoal',
+                name: 'Plano Pessoal',
+                description: '15 créditos mensais para criadores individuais e fotos pessoais.',
+                monthly_credits: 15,
+                price_cents: 2990,
+              },
+              {
+                id: 'plan_pro',
+                code: 'pro',
+                name: 'Plano Pro',
+                description: '40 créditos mensais para lojas virtuais, fotógrafos e produção contínua.',
+                monthly_credits: 40,
+                price_cents: 6990,
+              },
+              {
+                id: 'plan_business',
+                code: 'business',
+                name: 'Plano Business',
+                description: '100 créditos mensais com maior economia por imagem para marcas e agências.',
+                monthly_credits: 100,
+                price_cents: 14990,
+              },
+            ];
 
-            {/* Pacote Creator (Dinâmico) */}
-            {(() => {
-              const p = liveProducts.find((item) => item.code === 'creator_pack');
-              const price = p ? `R$ ${(p.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 39,90';
-              const credits = p?.credits ?? 50;
-              return (
-                <PriceCard
-                  name={p?.name || 'Pacote Creator'}
-                  description={p?.description || 'Pacote de créditos avulsos para criadores e lojistas.'}
-                  priceFormatted={price}
-                  periodLabel="pagamento único"
-                  creditsLabel={`${credits} Créditos`}
-                  features={[
-                    `${credits} créditos com validade de 12 meses`,
-                    'Sem cobrança mensal',
-                    'Acesso a todos os modelos',
-                    'Liberação Pix instantânea',
-                    'Histórico não-destrutivo',
-                  ]}
-                  buttonText="Adquirir Pacote"
-                  onSelect={() => navigate('/auth/register')}
-                />
-              );
-            })()}
+            const activePlans = livePlans && livePlans.length > 0 ? livePlans : fallbackPlans;
+            const gridCols =
+              activePlans.length <= 2
+                ? 'grid-cols-1 md:grid-cols-2 max-w-3xl'
+                : activePlans.length === 3
+                ? 'grid-cols-1 md:grid-cols-3 max-w-5xl'
+                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl';
 
-            {/* Pacote Pro (Popular Dinâmico) */}
-            {(() => {
-              const p = liveProducts.find((item) => item.code === 'pro_pack');
-              const price = p ? `R$ ${(p.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 69,90';
-              const credits = p?.credits ?? 100;
-              return (
-                <PriceCard
-                  name={p?.name || 'Pacote Pro'}
-                  description={p?.description || 'O pacote mais procurado por estúdios e agências.'}
-                  priceFormatted={price}
-                  periodLabel="pagamento único"
-                  creditsLabel={`${credits} Créditos`}
-                  isPopular
-                  features={[
-                    `${credits} créditos com validade de 12 meses`,
-                    'Maior economia por foto',
-                    'Prioridade na fila de renderização',
-                    'Retenção segura de 90 dias',
-                    'Download em PNG, JPG e WebP',
-                  ]}
-                  buttonText="Garantir Oferta"
-                  onSelect={() => navigate('/auth/register')}
-                />
-              );
-            })()}
+            return (
+              <div className={`grid ${gridCols} gap-6 mx-auto`}>
+                {activePlans.map((plan: any) => {
+                  const priceCents = plan.price_cents ?? plan.priceCents ?? 0;
+                  const credits = plan.monthly_credits ?? plan.monthlyCredits ?? 0;
+                  const isPopular =
+                    plan.code === 'pro' ||
+                    plan.code === 'popular' ||
+                    String(plan.name).toLowerCase().includes('pro') ||
+                    String(plan.name).toLowerCase().includes('popular');
 
-            {/* Assinatura Mensal (Dinâmica) */}
-            {(() => {
-              const plan = livePlans.find((item) => item.code === 'studio_monthly');
-              const price = plan ? `R$ ${(plan.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 79,90';
-              const credits = plan?.monthly_credits ?? 150;
-              return (
-                <PriceCard
-                  name={plan?.name || 'Assinatura Studio'}
-                  description={plan?.description || 'Fluxo contínuo para quem edita fotos profissionalmente toda semana.'}
-                  priceFormatted={price}
-                  periodLabel="por mês"
-                  creditsLabel={`${credits} Créditos / mês`}
-                  features={[
-                    `${credits} créditos renovados todo mês`,
-                    'Máxima prioridade de fila',
-                    'Suporte prioritário especializado',
-                    'Cancele quando quiser com 1 clique',
-                    'Acesso antecipado a novos tiers',
-                  ]}
-                  buttonText="Assinar Plano"
-                  onSelect={() => navigate('/auth/register')}
-                />
-              );
-            })()}
-          </div>
+                  return (
+                    <PriceCard
+                      key={plan.id || plan.code}
+                      name={plan.name}
+                      description={plan.description || 'Plano de assinatura mensal recorrente com créditos automáticos.'}
+                      priceFormatted={`R$ ${(priceCents / 100).toFixed(2).replace('.', ',')}`}
+                      periodLabel="por mês"
+                      creditsLabel={`${credits} Créditos / mês`}
+                      isPopular={isPopular}
+                      features={[
+                        `${credits} créditos renovados todo mês`,
+                        'Acesso completo às 14 ferramentas de IA',
+                        'Remoção de fundo com IA óptica',
+                        'Histórico de versões não-destrutivo',
+                        'Downloads em alta resolução (PNG, JPG, WebP)',
+                        'Cancele quando quiser com 1 clique',
+                      ]}
+                      buttonText={isAuthenticated ? 'Assinar no Painel' : `Assinar ${plan.name}`}
+                      onSelect={() => navigate(isAuthenticated ? '/pricing' : '/auth/register')}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </section>
 

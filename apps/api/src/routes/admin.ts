@@ -206,7 +206,15 @@ adminRoutes.get('/users/:id', async (c) => {
 
 // POST /admin/users/:id/block - Bloqueio de usuário
 adminRoutes.post('/users/:id/block', async (c) => {
-  const body = await parseJson(c, BlockUserSchema);
+  let reason = 'Bloqueio administrativo realizado pelo painel.';
+  try {
+    const raw = await c.req.json();
+    if (raw && typeof raw === 'object' && 'reason' in raw && typeof raw.reason === 'string') {
+      reason = raw.reason.trim() || reason;
+    }
+  } catch {
+    // Tolerante a body vazio
+  }
   const adminUser = c.get('user');
   const userId = c.req.param('id');
   const now = nowIso();
@@ -218,7 +226,7 @@ adminRoutes.post('/users/:id/block', async (c) => {
   await execute(
     c.env.DB,
     `UPDATE users SET status = 'blocked', blocked_reason = ?, updated_at = ? WHERE id = ?`,
-    [body.reason, now, userId],
+    [reason, now, userId],
   );
 
   // Revoga imediatamente todas as sessões do usuário
@@ -230,7 +238,7 @@ adminRoutes.post('/users/:id/block', async (c) => {
     action: 'admin.user.block',
     targetType: 'user',
     targetId: userId,
-    metadata: { reason: body.reason },
+    metadata: { reason },
   });
 
   return c.json({ message: 'Usuário bloqueado e sessões revogadas.' });
@@ -257,6 +265,54 @@ adminRoutes.post('/users/:id/unblock', async (c) => {
   });
 
   return c.json({ message: 'Usuário desbloqueado com sucesso.' });
+});
+
+// DELETE /admin/users/:id - Exclusão permanente de usuário
+adminRoutes.delete('/users/:id', async (c) => {
+  const adminUser = c.get('user');
+  const userId = c.req.param('id');
+
+  if (userId === adminUser.id) {
+    throw new DomainError('FORBIDDEN', 'Você não pode excluir sua própria conta de administrador.', 403);
+  }
+
+  const target = await queryOne<{ id: string; email: string }>(
+    c.env.DB,
+    'SELECT id, email FROM users WHERE id = ?',
+    [userId],
+  );
+
+  if (!target) {
+    throw new DomainError('NOT_FOUND', 'Usuário não encontrado.', 404);
+  }
+
+  // Revoga sessões
+  await revokeAllUserSessions(c.env.DB, userId);
+
+  // Limpeza em cascata
+  try {
+    await execute(c.env.DB, 'DELETE FROM profiles WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM user_roles WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM credit_lots WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM credit_transactions WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM wallets WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM notifications WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM customer_feedbacks WHERE user_id = ?', [userId]);
+    await execute(c.env.DB, 'DELETE FROM users WHERE id = ?', [userId]);
+  } catch {
+    await execute(c.env.DB, 'DELETE FROM users WHERE id = ?', [userId]);
+  }
+
+  await audit(c.env, {
+    actorUserId: adminUser.id,
+    actorType: 'admin',
+    action: 'admin.user.delete',
+    targetType: 'user',
+    targetId: userId,
+    metadata: { deletedEmail: target.email },
+  });
+
+  return c.json({ ok: true, message: `Usuário ${target.email} excluído permanentemente.` });
 });
 
 // POST /admin/users/:id/credits - Ajuste administrativo de créditos

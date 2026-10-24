@@ -48,12 +48,13 @@ billingApp.get('/catalog', async (c) => {
       }>(),
     db
       .prepare(
-        `SELECT code, name, description, monthly_credits, price_cents 
+        `SELECT id, code, name, description, monthly_credits, price_cents 
          FROM plans 
          WHERE active = 1 
          ORDER BY sort_order ASC, price_cents ASC`,
       )
       .all<{
+        id: string;
         code: string;
         name: string;
         description: string | null;
@@ -69,15 +70,19 @@ billingApp.get('/catalog', async (c) => {
     description: p.description,
     credits: p.credits,
     priceCents: p.price_cents,
+    price_cents: p.price_cents,
     creditValidityDays: p.credit_validity_days,
   }));
 
   const plans = (plansRes.results ?? []).map((pl) => ({
+    id: pl.id,
     code: pl.code,
     name: pl.name,
     description: pl.description,
     monthlyCredits: pl.monthly_credits,
+    monthly_credits: pl.monthly_credits,
     priceCents: pl.price_cents,
+    price_cents: pl.price_cents,
   }));
 
   return c.json({ products, plans });

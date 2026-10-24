@@ -26,6 +26,10 @@ import {
   TabList,
   TabTrigger,
   TabContent,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  Textarea,
   useToast,
 } from '@/design-system';
 import {
@@ -54,6 +58,10 @@ import {
   Clock,
   Sparkles,
   Zap,
+  MoreVertical,
+  Trash2,
+  Plus,
+  Edit2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api, AdminMetrics } from '@/lib/api-client';
@@ -78,38 +86,55 @@ export const AdminPage: React.FC = () => {
   const [creditNote, setCreditNote] = useState('Bonificação de suporte administrativo');
   const [isGrantingCredits, setIsGrantingCredits] = useState(false);
 
-  // ── 2. Planos & Precificação Dinâmica ──
+  // Modal de Exclusão de Usuário
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // ── 2. Planos & Precificação Dinâmica (Sincronizado) ──
   const [plansList, setPlansList] = useState<any[]>([
     {
-      id: 'plan_creator',
-      code: 'creator_pack',
-      name: 'Pacote Creator',
-      description: 'Pacote de créditos avulsos para criadores e lojistas.',
-      monthly_credits: 50,
-      price_cents: 3990,
+      id: 'plan_pessoal',
+      code: 'pessoal',
+      name: 'Plano Pessoal',
+      description: '15 créditos mensais para criadores individuais e fotos pessoais.',
+      monthly_credits: 15,
+      price_cents: 2990,
       active: 1,
     },
     {
       id: 'plan_pro',
-      code: 'pro_pack',
-      name: 'Pacote Pro (Popular)',
-      description: 'O pacote mais procurado por estúdios e agências.',
-      monthly_credits: 100,
+      code: 'pro',
+      name: 'Plano Pro (Popular)',
+      description: '40 créditos mensais para lojas virtuais, fotógrafos e produção contínua.',
+      monthly_credits: 40,
       price_cents: 6990,
       active: 1,
     },
     {
-      id: 'plan_studio',
-      code: 'studio_monthly',
-      name: 'Assinatura Studio',
-      description: 'Fluxo contínuo para quem edita fotos profissionalmente toda semana.',
-      monthly_credits: 150,
-      price_cents: 7990,
+      id: 'plan_business',
+      code: 'business',
+      name: 'Plano Business',
+      description: '100 créditos mensais com maior economia por imagem para marcas e agências.',
+      monthly_credits: 100,
+      price_cents: 14990,
       active: 1,
     },
   ]);
   const [editingPlan, setEditingPlan] = useState<any | null>(null);
   const [isSavingPlan, setIsSavingPlan] = useState(false);
+
+  // Criar e Excluir Planos
+  const [isCreatingPlanOpen, setIsCreatingPlanOpen] = useState(false);
+  const [newPlanData, setNewPlanData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    price_cents: 4990,
+    monthly_credits: 30,
+  });
+  const [isSavingNewPlan, setIsSavingNewPlan] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<any | null>(null);
+  const [isDeletingPlan, setIsDeletingPlan] = useState(false);
 
   // ── 3. Feedbacks dos Assinantes ──
   const [feedbacks, setFeedbacks] = useState<any[]>([
@@ -405,16 +430,31 @@ export const AdminPage: React.FC = () => {
     try {
       if (u.isBlocked) {
         await api.admin.unblockUser(u.id);
-        success(`Usuário ${u.email} foi desbloqueado.`, 'Desbloqueado');
+        success(`Usuário ${u.email} foi desbloqueado com sucesso.`, 'Desbloqueado');
       } else {
-        await api.admin.blockUser(u.id);
-        success(`Usuário ${u.email} foi bloqueado.`, 'Bloqueado');
+        await api.admin.blockUser(u.id, 'Bloqueio administrativo realizado pelo painel executivo');
+        success(`Usuário ${u.email} foi bloqueado. Todas as sessões ativas foram encerradas.`, 'Bloqueado');
       }
       setUsers((prev) =>
         prev.map((item) => (item.id === u.id ? { ...item, isBlocked: !item.isBlocked } : item))
       );
     } catch (err: any) {
       error(err.message || 'Falha ao alterar status do usuário.', 'Erro');
+    }
+  };
+
+  const handleDeleteUserConfirm = async () => {
+    if (!userToDelete) return;
+    setIsDeletingUser(true);
+    try {
+      await api.admin.deleteUser(userToDelete.id);
+      setUsers((prev) => prev.filter((item) => item.id !== userToDelete.id));
+      success(`A conta de ${userToDelete.email} foi excluída permanentemente.`, 'Usuário Excluído');
+      setUserToDelete(null);
+    } catch (err: any) {
+      error(err.message || 'Falha ao excluir usuário.', 'Erro');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -465,6 +505,69 @@ export const AdminPage: React.FC = () => {
       error(err.message || 'Falha ao atualizar plano.', 'Erro');
     } finally {
       setIsSavingPlan(false);
+    }
+  };
+
+  // Criar Novo Plano
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlanData.name.trim() || !newPlanData.code.trim()) {
+      error('Preencha o nome e o código identificador do plano.', 'Campos Obrigatórios');
+      return;
+    }
+
+    setIsSavingNewPlan(true);
+    try {
+      const res = await api.admin.createPlan({
+        code: newPlanData.code.trim().toLowerCase(),
+        name: newPlanData.name.trim(),
+        description: newPlanData.description.trim(),
+        priceCents: parseInt(String(newPlanData.price_cents), 10),
+        monthlyCredits: parseInt(String(newPlanData.monthly_credits), 10),
+        active: true,
+      });
+
+      const created = res.plan || {
+        id: `plan_${Date.now()}`,
+        code: newPlanData.code.trim().toLowerCase(),
+        name: newPlanData.name.trim(),
+        description: newPlanData.description.trim(),
+        price_cents: parseInt(String(newPlanData.price_cents), 10),
+        monthly_credits: parseInt(String(newPlanData.monthly_credits), 10),
+        active: 1,
+      };
+
+      setPlansList((prev) => [...prev, created]);
+      success('Novo plano criado! Já sincronizado na Landing Page e no Checkout.', 'Plano Criado');
+      setIsCreatingPlanOpen(false);
+      setNewPlanData({
+        code: '',
+        name: '',
+        description: '',
+        price_cents: 4990,
+        monthly_credits: 30,
+      });
+    } catch (err: any) {
+      error(err.message || 'Falha ao criar plano.', 'Erro');
+    } finally {
+      setIsSavingNewPlan(false);
+    }
+  };
+
+  // Excluir Plano
+  const handleDeletePlanConfirm = async () => {
+    if (!planToDelete) return;
+
+    setIsDeletingPlan(true);
+    try {
+      await api.admin.deletePlan(planToDelete.id);
+      setPlansList((prev) => prev.filter((p) => p.id !== planToDelete.id));
+      success(`Plano "${planToDelete.name}" foi removido do catálogo e da Landing Page.`, 'Plano Excluído');
+      setPlanToDelete(null);
+    } catch (err: any) {
+      error(err.message || 'Falha ao excluir plano.', 'Erro');
+    } finally {
+      setIsDeletingPlan(false);
     }
   };
 
@@ -798,25 +901,61 @@ export const AdminPage: React.FC = () => {
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(u.createdAt).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          leftIcon={<Coins className="h-3 w-3 text-amber-500" />}
-                          onClick={() => setCreditModalUser(u)}
-                        >
-                          Conceder Créditos
-                        </Button>
-                        {!u.roles?.includes('admin') && (
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <Button
-                            variant={u.isBlocked ? 'secondary' : 'danger'}
+                            variant="outline"
                             size="sm"
-                            leftIcon={u.isBlocked ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                            onClick={() => handleToggleBlockUser(u)}
+                            leftIcon={<Coins className="h-3 w-3 text-amber-500" />}
+                            onClick={() => setCreditModalUser(u)}
                           >
-                            {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
+                            Créditos
                           </Button>
-                        )}
+
+                          {!u.roles?.includes('admin') && (
+                            <DropdownMenu
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-lg border border-border/80 hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground focus:outline-none"
+                                  title="Ações do usuário"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              }
+                            >
+                              <DropdownMenuItem onClick={() => handleToggleBlockUser(u)}>
+                                {u.isBlocked ? (
+                                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                    <Unlock className="h-3.5 w-3.5" />
+                                    <span>Desbloquear Conta</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                    <Lock className="h-3.5 w-3.5" />
+                                    <span>Bloquear Conta</span>
+                                  </div>
+                                )}
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem onClick={() => setCreditModalUser(u)}>
+                                <div className="flex items-center gap-2 text-foreground">
+                                  <Coins className="h-3.5 w-3.5 text-amber-500" />
+                                  <span>Conceder Créditos</span>
+                                </div>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem onClick={() => setUserToDelete(u)}>
+                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Excluir Usuário</span>
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -838,12 +977,22 @@ export const AdminPage: React.FC = () => {
                   Gerenciador de Planos & Preços
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Altere os valores e créditos aqui. <strong>Ao salvar, os valores atualizam imediatamente na Landing Page e no Checkout Asaas!</strong>
+                  Crie, edite ou remova planos. <strong>Todas as mudanças refletem imediatamente na Landing Page e no Checkout Asaas!</strong>
                 </CardDescription>
               </div>
-              <Badge variant="success" size="sm" className="flex items-center gap-1">
-                <Check className="h-3.5 w-3.5" /> Sincronizado com Landing Page
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="success" size="sm" className="hidden sm:flex items-center gap-1">
+                  <Check className="h-3.5 w-3.5" /> Sincronizado com Landing Page
+                </Badge>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => setIsCreatingPlanOpen(true)}
+                >
+                  Novo Plano
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -863,7 +1012,7 @@ export const AdminPage: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Preço Atual:</span>
+                        <span className="text-xs text-muted-foreground">Preço Mensal:</span>
                         <span className="text-base font-extrabold text-foreground font-mono">
                           {((plan.price_cents ?? 0) / 100).toLocaleString('pt-BR', {
                             style: 'currency',
@@ -878,15 +1027,24 @@ export const AdminPage: React.FC = () => {
                         </span>
                       </div>
                     </CardContent>
-                    <CardFooter className="pt-2">
+                    <CardFooter className="pt-2 flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        fullWidth
+                        className="flex-1"
                         leftIcon={<Sliders className="h-3.5 w-3.5" />}
                         onClick={() => setEditingPlan({ ...plan })}
                       >
-                        Editar Valor & Créditos
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                        onClick={() => setPlanToDelete(plan)}
+                      >
+                        Excluir
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1359,6 +1517,153 @@ export const AdminPage: React.FC = () => {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ── Modal de Criação de Novo Plano ── */}
+      {isCreatingPlanOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsCreatingPlanOpen(false)}
+          title="Criar Novo Plano de Assinatura"
+          size="md"
+        >
+          <form onSubmit={handleCreatePlan} className="space-y-4">
+            <Input
+              label="Nome do Plano"
+              placeholder="Ex: Plano Starter"
+              value={newPlanData.name}
+              onChange={(e) => {
+                const name = e.target.value;
+                const codeAuto = name
+                  .toLowerCase()
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/[^a-z0-9]/g, '_');
+                setNewPlanData({
+                  ...newPlanData,
+                  name,
+                  code: newPlanData.code ? newPlanData.code : codeAuto,
+                });
+              }}
+              required
+            />
+
+            <Input
+              label="Código Identificador (URL/Sistema)"
+              placeholder="Ex: starter"
+              value={newPlanData.code}
+              onChange={(e) => setNewPlanData({ ...newPlanData, code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '_') })}
+              helperText="Identificador único no banco de dados e gateway Asaas"
+              required
+            />
+
+            <Input
+              label="Preço em Centavos (ex: 4990 = R$ 49,90)"
+              type="number"
+              min="100"
+              value={newPlanData.price_cents}
+              onChange={(e) => setNewPlanData({ ...newPlanData, price_cents: parseInt(e.target.value, 10) || 0 })}
+              helperText={`Equivale a R$ ${((newPlanData.price_cents || 0) / 100).toFixed(2).replace('.', ',')}`}
+              required
+            />
+
+            <Input
+              label="Créditos Mensais Inclusos"
+              type="number"
+              min="1"
+              value={newPlanData.monthly_credits}
+              onChange={(e) => setNewPlanData({ ...newPlanData, monthly_credits: parseInt(e.target.value, 10) || 0 })}
+              required
+            />
+
+            <Input
+              label="Descrição Resumida do Plano"
+              placeholder="Ex: 30 créditos mensais para pequenas lojas e profissionais autônomos."
+              value={newPlanData.description}
+              onChange={(e) => setNewPlanData({ ...newPlanData, description: e.target.value })}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" size="sm" type="button" onClick={() => setIsCreatingPlanOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="gold" size="sm" type="submit" isLoading={isSavingNewPlan}>
+                Criar e Publicar Plano
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Modal de Confirmação de Exclusão de Plano ── */}
+      {planToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => setPlanToDelete(null)}
+          title="Excluir Plano do Catálogo?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Tem certeza que deseja apagar permanentemente o plano{' '}
+              <strong className="text-foreground">{planToDelete.name}</strong>?
+              Ele será removido imediatamente da Landing Page e do Checkout.
+            </p>
+
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400">
+              Assinaturas já ativas neste plano continuarão operando até cancelamento pelo cliente.
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setPlanToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeletingPlan}
+                onClick={handleDeletePlanConfirm}
+              >
+                Sim, Excluir Plano
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Modal de Confirmação de Exclusão de Usuário ── */}
+      {userToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => setUserToDelete(null)}
+          title="Excluir Conta de Usuário?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Você está prestes a excluir permanentemente a conta de{' '}
+              <strong className="text-foreground font-mono">{userToDelete.email}</strong>.
+            </p>
+
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400">
+              Todas as sessões ativas serão encerradas e os registros associados ao usuário serão revogados do banco de dados. Esta ação não pode ser desfeita.
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setUserToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeletingUser}
+                onClick={handleDeleteUserConfirm}
+              >
+                Excluir Usuário Permanentemente
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

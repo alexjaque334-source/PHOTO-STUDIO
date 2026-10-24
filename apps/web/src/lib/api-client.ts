@@ -661,15 +661,22 @@ export const api = {
       }>(`/api/admin/users?${params.toString()}`);
     },
 
-    async blockUser(id: string) {
+    async blockUser(id: string, reason?: string) {
       return request<void>(`/api/admin/users/${encodeURIComponent(id)}/block`, {
         method: 'POST',
+        body: JSON.stringify({ reason: reason || 'Bloqueio administrativo realizado pelo painel' }),
       });
     },
 
     async unblockUser(id: string) {
       return request<void>(`/api/admin/users/${encodeURIComponent(id)}/unblock`, {
         method: 'POST',
+      });
+    },
+
+    async deleteUser(id: string) {
+      return request<{ ok: boolean; message: string }>(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
       });
     },
 
@@ -729,6 +736,26 @@ export const api = {
       return request<{ ok: boolean; id: string }>(`/api/admin/billing/plans/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
+      });
+    },
+
+    async createPlan(data: {
+      code: string;
+      name: string;
+      description?: string;
+      priceCents: number;
+      monthlyCredits: number;
+      active?: boolean;
+    }) {
+      return request<{ ok: boolean; plan: any }>('/api/admin/billing/plans', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async deletePlan(id: string) {
+      return request<{ ok: boolean; id: string; message: string }>(`/api/admin/billing/plans/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
       });
     },
 
