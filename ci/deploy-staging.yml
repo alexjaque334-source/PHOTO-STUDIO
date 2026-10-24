@@ -1,0 +1,43 @@
+name: Deploy Staging - ALEGON AI Photo Studio
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Digite "SIM" para autorizar o deploy no ambiente de Staging'
+        required: true
+        default: 'NAO'
+
+jobs:
+  deploy-staging:
+    name: Build and Deploy to Cloudflare Staging
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_deploy == 'SIM'
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scan secrets
+        run: node scripts/check-secrets.mjs
+
+      - name: Build Web SPA
+        run: npm run build -w apps/web
+
+      - name: Deploy Worker to Staging
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'apps/api'
+          command: 'deploy --env staging'

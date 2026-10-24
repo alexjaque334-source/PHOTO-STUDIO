@@ -1,0 +1,21 @@
+{
+  "name": "alegon-ai-photo-studio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ALEGON AI Photo Studio — SaaS de edição de fotos com IA (ALEGON Marketing & Tecnologia)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

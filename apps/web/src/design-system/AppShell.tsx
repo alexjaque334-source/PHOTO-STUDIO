@@ -1,0 +1,278 @@
+import React, { useState } from 'react';
+import { cn } from './cn';
+import { Logo } from './Logo';
+import { ThemeToggle } from './Theme';
+import { Badge } from './Badge';
+import { Button } from './Button';
+import { Drawer } from './Drawer';
+import {
+  Sparkles,
+  Image,
+  Wallet,
+  CreditCard,
+  ShieldAlert,
+  Menu,
+  Coins,
+  LogOut,
+  Sliders,
+} from 'lucide-react';
+
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  active?: boolean;
+  badge?: string;
+  isAdmin?: boolean;
+}
+
+export interface AppShellProps {
+  children: React.ReactNode;
+  user?: {
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+    isAdmin?: boolean;
+  };
+  creditsBalance?: {
+    available: number;
+    expiringSoonCount?: number;
+  };
+  navItems?: NavItem[];
+  onNavigate?: (href: string) => void;
+  onLogout?: () => void;
+  currentPath?: string;
+  className?: string;
+}
+
+export const AppShell: React.FC<AppShellProps> = ({
+  children,
+  user = { fullName: 'Alexandre Silva', email: 'alex@alegon.com.br', isAdmin: false },
+  creditsBalance = { available: 42, expiringSoonCount: 0 },
+  navItems,
+  onNavigate,
+  onLogout,
+  currentPath = '/studio',
+  className,
+}) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const defaultNavItems: NavItem[] = [
+    {
+      label: 'Studio de Edição',
+      href: '/studio',
+      icon: <Sparkles className="h-4 w-4" />,
+      active: currentPath.startsWith('/studio'),
+    },
+    {
+      label: 'Biblioteca',
+      href: '/library',
+      icon: <Image className="h-4 w-4" />,
+      active: currentPath.startsWith('/library'),
+    },
+    {
+      label: 'Carteira & Extrato',
+      href: '/wallet',
+      icon: <Wallet className="h-4 w-4" />,
+      active: currentPath.startsWith('/wallet'),
+    },
+    {
+      label: 'Planos & Créditos',
+      href: '/pricing',
+      icon: <CreditCard className="h-4 w-4" />,
+      active: currentPath.startsWith('/pricing'),
+    },
+    {
+      label: 'Guia do Design System',
+      href: '/design',
+      icon: <Sliders className="h-4 w-4" />,
+      active: currentPath.startsWith('/design'),
+    },
+    ...(user?.isAdmin
+      ? [
+          {
+            label: 'Painel Admin',
+            href: '/admin',
+            icon: <ShieldAlert className="h-4 w-4" />,
+            active: currentPath.startsWith('/admin'),
+            isAdmin: true,
+          },
+        ]
+      : []),
+  ];
+
+  const items = navItems || defaultNavItems;
+
+  const handleNavClick = (href: string) => {
+    setMobileMenuOpen(false);
+    onNavigate?.(href);
+  };
+
+  return (
+    <div className={cn('min-h-screen bg-background text-foreground flex flex-col', className)}>
+      {/* Barra de Topo Geral */}
+      <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Abrir menu de navegação"
+              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavClick('/');
+              }}
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+            >
+              <Logo size="md" />
+            </a>
+          </div>
+
+          {/* Área de Ações à Direita: Saldo de Créditos, Alternador de Tema e Usuário */}
+          <div className="flex items-center gap-3">
+            {/* Saldo de Créditos em Ouro */}
+            <div
+              onClick={() => handleNavClick('/wallet')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-mono text-xs font-bold hover:bg-amber-500/20 transition-colors cursor-pointer select-none"
+              title="Ver detalhes da sua carteira"
+            >
+              <Coins className="h-3.5 w-3.5 text-amber-500" />
+              <span>{creditsBalance.available}</span>
+              <span className="hidden sm:inline font-sans font-normal opacity-80">créditos</span>
+            </div>
+
+            <ThemeToggle />
+
+            {/* Avatar / Usuário */}
+            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border/60">
+              <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs select-none">
+                {user.fullName.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="hidden md:flex flex-col text-left">
+                <span className="text-xs font-semibold leading-tight">{user.fullName}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{user.email}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Conteúdo Principal com Sidebar Desktop */}
+      <div className="flex-1 flex w-full">
+        {/* Sidebar Desktop */}
+        <aside className="hidden lg:flex flex-col w-64 border-r border-border/80 bg-card/40 p-4 justify-between shrink-0">
+          <nav className="space-y-1" aria-label="Navegação do estúdio">
+            <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Menu do Studio
+            </div>
+            {items.map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                onClick={() => handleNavClick(item.href)}
+                className={cn(
+                  'flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 select-none cursor-pointer',
+                  item.active
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={cn(item.active ? 'text-primary-foreground' : 'text-muted-foreground')}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <Badge variant="gold" size="sm">
+                    {item.badge}
+                  </Badge>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Bloco de Retenção & Logout */}
+          <div className="pt-4 border-t border-border/60 space-y-3">
+            <div className="p-3 rounded-xl bg-secondary/60 border border-border/50 text-[11px] space-y-1">
+              <span className="font-bold text-foreground flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Retenção Segura: 90 dias
+              </span>
+              <p className="text-muted-foreground leading-normal">
+                Seus arquivos originais e gerados ficam disponíveis no R2 privado.
+              </p>
+            </div>
+
+            {onLogout && (
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                leftIcon={<LogOut className="h-4 w-4" />}
+                onClick={onLogout}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                Encerrar Sessão
+              </Button>
+            )}
+          </div>
+        </aside>
+
+        {/* Drawer Mobile */}
+        <Drawer
+          isOpen={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          title="Menu ALEGON Studio"
+          position="left"
+        >
+          <div className="flex flex-col h-full justify-between gap-6">
+            <nav className="space-y-1">
+              {items.map((item) => (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => handleNavClick(item.href)}
+                  className={cn(
+                    'flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-semibold transition-colors',
+                    item.active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && <Badge variant="gold">{item.badge}</Badge>}
+                </button>
+              ))}
+            </nav>
+
+            {onLogout && (
+              <Button
+                variant="outline"
+                size="md"
+                fullWidth
+                leftIcon={<LogOut className="h-4 w-4" />}
+                onClick={onLogout}
+              >
+                Encerrar Sessão
+              </Button>
+            )}
+          </div>
+        </Drawer>
+
+        {/* Área de Trabalho / Workspace Central */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">{children}</main>
+      </div>
+    </div>
+  );
+};

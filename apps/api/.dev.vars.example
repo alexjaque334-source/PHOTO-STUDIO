@@ -1,0 +1,56 @@
+# ==============================================================================
+# ALEGON AI Photo Studio — Exemplo de Variáveis e Segredos Locais (.dev.vars)
+# Dono: Subagente Cloudflare / DevOps
+# ==============================================================================
+# Instruções:
+# 1. Copie este arquivo para `apps/api/.dev.vars`:
+#    cp .dev.vars.example .dev.vars
+#    (ou execute o script automatizado: `npm run setup:local` na raiz)
+# 2. Preencha os segredos obrigatórios gerados abaixo.
+# 3. NUNCA comite o arquivo `.dev.vars` no controle de versão git.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. CHAVES CRIPTOGRÁFICAS OBRIGATÓRIAS (Geradas Localmente)
+# ------------------------------------------------------------------------------
+
+# SESSION_SECRET: Segredo HMAC para tokens assinados (URLs temporárias de download R2)
+# e derivação de identificadores opacos de sessão.
+# Gerar via Node.js:
+# node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+SESSION_SECRET="replace_with_64_character_hex_random_string_min_32_bytes"
+
+# DATA_ENCRYPTION_KEY: Chave simétrica AES-256-GCM para criptografia de segredos
+# em repouso no D1 (segredos MFA/TOTP dos usuários). DEVE ser Base64 de 32 bytes.
+# Gerar via Node.js:
+# node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+DATA_ENCRYPTION_KEY="replace_with_44_character_base64_string_32_bytes_aes_key"
+
+# ------------------------------------------------------------------------------
+# 2. INTEGRAÇÃO COM OPENROUTER (IA)
+# ------------------------------------------------------------------------------
+# Obtenha sua chave em: https://openrouter.ai/keys
+# Obrigatório para executar jobs de edição fotográfica com IA.
+OPENROUTER_API_KEY="sk-or-v1-replace_with_your_openrouter_api_key"
+
+# ------------------------------------------------------------------------------
+# 3. INTEGRAÇÃO COM ASAAS (Pagamentos & Cobrança - SANDBOX)
+# ------------------------------------------------------------------------------
+# Crie uma conta de testes em: https://sandbox.asaas.com
+# Gere a API Key em: Configurações da Conta -> Integrações -> Chaves de API
+ASAAS_API_KEY="$aact_replace_with_your_asaas_sandbox_api_key"
+
+# Token configurado no painel do Asaas para validar os webhooks recebidos:
+# Enviado no cabeçalho HTTP: `asaas-access-token`
+# Gere uma string aleatória segura:
+# node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+ASAAS_WEBHOOK_TOKEN="replace_with_secure_webhook_token_for_asaas"
+
+# ------------------------------------------------------------------------------
+# 4. INTEGRAÇÃO COM RESEND (E-mails Transacionais - OPCIONAL EM DEV)
+# ------------------------------------------------------------------------------
+# Obtenha sua chave em: https://resend.com/api-keys
+# Em ambiente de desenvolvimento local, se omitido, os e-mails são gravados
+# automaticamente na tabela `email_outbox` do D1 com status 'dev_logged'
+# e o link de confirmação/recuperação é emitido no log do console.
+RESEND_API_KEY=""
