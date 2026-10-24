@@ -19,6 +19,7 @@ import { newId, nowIso, parseJson } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
 import { createAiEditService } from '../ai';
 import { createWalletService } from '../wallet';
+import { processSingleEditJob } from '../jobs/edit-consumer';
 
 const editRoutes = new Hono<AppContext>();
 
@@ -570,13 +571,17 @@ editRoutes.post('/confirm', requireAuth(), async (c) => {
     [now, idempotencyKey, editReq.id],
   );
 
-  // 4. Enfileira na Cloudflare Queue (alegon-edit-jobs)
-  await c.env.EDIT_QUEUE.send({
-    type: 'edit_job',
-    jobId,
-    userId: user.id,
-    enqueuedAt: now,
-  });
+  // 4. Enfileira na Cloudflare Queue ou executa em background se Queue não estiver configurada
+  if (c.env.EDIT_QUEUE) {
+    await c.env.EDIT_QUEUE.send({
+      type: 'edit_job',
+      jobId,
+      userId: user.id,
+      enqueuedAt: now,
+    });
+  } else {
+    c.executionCtx.waitUntil(processSingleEditJob(jobId, c.env, c.executionCtx as any));
+  }
 
   return c.json({ jobId }, 202);
 });

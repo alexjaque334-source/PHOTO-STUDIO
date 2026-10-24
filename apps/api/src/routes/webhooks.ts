@@ -13,6 +13,7 @@ import { z } from 'zod';
 import type { AppContext } from '../env';
 import { DomainError } from '../contracts';
 import { newId, nowIso } from '../lib/http';
+import { handleWebhookQueue } from '../billing/webhook-processor';
 
 const webhookApp = new Hono<AppContext>();
 
@@ -107,12 +108,33 @@ webhookApp.post('/asaas', async (c) => {
     )
     .run();
 
-  // Enfileira na fila do Cloudflare Workers
+  // Enfileira na fila do Cloudflare Workers ou processa assíncrono caso Queue não esteja ativa
   if (c.env.WEBHOOK_QUEUE) {
     await c.env.WEBHOOK_QUEUE.send({
       type: 'asaas_webhook',
       eventRowId,
     });
+  } else {
+    c.executionCtx.waitUntil(
+      handleWebhookQueue(
+        {
+          messages: [
+            {
+              id: eventRowId,
+              timestamp: new Date(),
+              body: { type: 'asaas_webhook', eventRowId },
+              ack: () => {},
+              retry: () => {},
+            },
+          ] as any,
+          queue: 'alegon-asaas-webhooks',
+          ackAll: () => {},
+          retryAll: () => {},
+        } as any,
+        c.env,
+        c.executionCtx as any,
+      ),
+    );
   }
 
   return c.json({ ok: true }, 200);
