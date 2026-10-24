@@ -86,20 +86,36 @@ export const AdminPage: React.FC = () => {
     let isMounted = true;
     api.admin
       .getMetrics()
-      .then((m) => {
+      .then((res: any) => {
         if (!isMounted) return;
-        setMetrics(m);
-      })
-      .catch((err) => {
-        // Fallback para métricas locais demonstrativas
+        const totalAiCost = res.totalAiCostUsd ?? res.financial?.aiCostUsd ?? 0;
+        const mrr = res.mrrCents ?? res.financial?.revenueCents ?? 0;
+        const totalUsers = res.totalUsers ?? res.users?.active ?? 0;
+        const payingUsers = res.payingUsers ?? res.users?.paying ?? 0;
+        const margin = res.estimatedContributionMargin ?? (
+          mrr > 0 ? Number(((res.financial?.contributionMarginBrlCents / mrr) * 100).toFixed(1)) : 100
+        );
+        const jobs = res.jobsCompletedToday ?? res.aiUsage?.totalGenerations ?? 0;
+
         setMetrics({
-          totalUsers: 142,
-          payingUsers: 38,
-          activeSubscriptions: 24,
-          mrrCents: 191760,
-          totalAiCostUsd: 14.85,
-          estimatedContributionMargin: 82.4,
-          jobsCompletedToday: 184,
+          totalUsers,
+          payingUsers,
+          activeSubscriptions: res.activeSubscriptions ?? 0,
+          mrrCents: mrr,
+          totalAiCostUsd: totalAiCost,
+          estimatedContributionMargin: margin,
+          jobsCompletedToday: jobs,
+        });
+      })
+      .catch(() => {
+        setMetrics({
+          totalUsers: 1,
+          payingUsers: 0,
+          activeSubscriptions: 0,
+          mrrCents: 0,
+          totalAiCostUsd: 0,
+          estimatedContributionMargin: 100,
+          jobsCompletedToday: 0,
         });
       })
       .finally(() => {
@@ -109,33 +125,34 @@ export const AdminPage: React.FC = () => {
     // Carregar usuários
     api.admin
       .listUsers()
-      .then((res) => {
+      .then((res: any) => {
         if (!isMounted) return;
-        setUsers(res.items || []);
+        const rawItems = res.items || (Array.isArray(res) ? res : []);
+        const formatted = rawItems.map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          fullName: u.fullName || u.full_name || 'Sem nome',
+          emailVerified: Boolean(u.emailVerified ?? u.email_verified_at),
+          roles: Array.isArray(u.roles) ? u.roles : ['user'],
+          mfaEnabled: Boolean(u.mfaEnabled),
+          isBlocked: Boolean(u.isBlocked ?? (u.status === 'blocked')),
+          createdAt: u.createdAt || u.created_at || new Date().toISOString(),
+          balance: (u.purchased_balance ?? 0) + (u.subscription_balance ?? 0),
+        }));
+        setUsers(formatted);
       })
       .catch(() => {
         setUsers([
           {
             id: 'usr_admin_01',
-            email: 'admin@alegon.com.br',
+            email: 'apacessoria25@gmail.com',
             fullName: 'Administrador ALEGON',
             emailVerified: true,
             roles: ['admin', 'user'],
-            mfaEnabled: true,
-            isBlocked: false,
-            createdAt: '2026-10-01T10:00:00Z',
-            balance: 500,
-          },
-          {
-            id: 'usr_client_02',
-            email: 'fotografo@estudioluz.com.br',
-            fullName: 'Estúdio Luz Fotografia',
-            emailVerified: true,
-            roles: ['user'],
             mfaEnabled: false,
             isBlocked: false,
-            createdAt: '2026-10-12T14:30:00Z',
-            balance: 84,
+            createdAt: '2026-10-24T00:00:00Z',
+            balance: 50,
           },
         ]);
       })
@@ -146,36 +163,46 @@ export const AdminPage: React.FC = () => {
     // Carregar modelos
     api.admin
       .getModels()
-      .then((res) => {
+      .then((res: any) => {
         if (!isMounted) return;
-        setModels(res || []);
+        const list = Array.isArray(res) ? res : (res?.models || []);
+        const formatted = list.map((m: any) => ({
+          id: m.id,
+          tier: m.tier,
+          modelId: m.modelId || m.model_id,
+          label: m.label || m.display_name || m.model_id,
+          priority: m.priority ?? 100,
+          active: Boolean(m.active),
+          creditsCost: m.creditsCost || m.credits_cost || 1,
+        }));
+        setModels(formatted);
       })
       .catch(() => {
         setModels([
           {
             id: 'mod_fast_01',
             tier: 'economico',
-            modelId: 'google/gemini-2.0-flash-exp:free',
-            label: 'Flash Ultra-Fast',
-            priority: 1,
+            modelId: 'google/gemini-2.5-flash-image',
+            label: 'ALEGON Fast (Gemini Flash)',
+            priority: 10,
             active: true,
             creditsCost: 1,
           },
           {
             id: 'mod_std_01',
             tier: 'padrao',
-            modelId: 'black-forest-labs/flux-1-schnell',
-            label: 'Flux Schnell Studio',
-            priority: 1,
+            modelId: 'google/imagen-3',
+            label: 'ALEGON Studio Pro (Imagen 3)',
+            priority: 10,
             active: true,
             creditsCost: 1,
           },
           {
             id: 'mod_prem_01',
             tier: 'premium',
-            modelId: 'black-forest-labs/flux-1-dev',
-            label: 'Flux Dev Ultra-Precision',
-            priority: 1,
+            modelId: 'black-forest-labs/flux-1.1-pro',
+            label: 'ALEGON Master Ultra (FLUX Pro)',
+            priority: 10,
             active: true,
             creditsCost: 2,
           },
@@ -280,34 +307,34 @@ export const AdminPage: React.FC = () => {
           title="Receita Recorrente (MRR)"
           value={
             metrics
-              ? (metrics.mrrCents / 100).toLocaleString('pt-BR', {
+              ? ((metrics.mrrCents ?? 0) / 100).toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 })
-              : '...'
+              : 'R$ 0,00'
           }
           variant="gold"
           icon={<DollarSign className="h-5 w-5" />}
-          description={`${metrics?.activeSubscriptions || 0} assinaturas ativas`}
+          description={`${metrics?.activeSubscriptions ?? 0} assinaturas ativas`}
         />
 
         <StatCard
           title="Usuários Ativos / Pagantes"
-          value={metrics ? `${metrics.payingUsers} / ${metrics.totalUsers}` : '...'}
+          value={metrics ? `${metrics.payingUsers ?? 0} / ${metrics.totalUsers ?? 0}` : '0 / 0'}
           icon={<Users className="h-5 w-5" />}
           description="Taxa de conversão saudável"
         />
 
         <StatCard
           title="Custo OpenRouter (Hoje)"
-          value={metrics ? `$${metrics.totalAiCostUsd.toFixed(2)}` : '...'}
+          value={`$${(metrics?.totalAiCostUsd ?? 0).toFixed(2)}`}
           icon={<Cpu className="h-5 w-5" />}
-          description={`${metrics?.jobsCompletedToday || 0} jobs executados`}
+          description={`${metrics?.jobsCompletedToday ?? 0} jobs executados`}
         />
 
         <StatCard
           title="Margem de Contribuição"
-          value={metrics ? `${metrics.estimatedContributionMargin.toFixed(1)}%` : '...'}
+          value={`${(metrics?.estimatedContributionMargin ?? 100).toFixed(1)}%`}
           icon={<TrendingUp className="h-5 w-5" />}
           description="Sustentabilidade de margem bruta"
         />

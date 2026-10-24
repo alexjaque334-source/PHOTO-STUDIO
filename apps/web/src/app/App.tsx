@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
-import { AppShell, Spinner, NavItem } from '@/design-system';
+import { AppShell, Spinner, NavItem, ErrorBoundary } from '@/design-system';
 import {
   LayoutDashboard,
   Sparkles,
@@ -130,7 +130,9 @@ const AppShellLayout: React.FC = () => {
         expiringSoonCount: walletBalance?.expiringSoon?.length ?? 0,
       }}
     >
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
     </AppShell>
   );
 };
@@ -179,7 +181,11 @@ const AdminRoute: React.FC = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <ErrorBoundary fallbackTitle="Painel de Controle">
+      <Outlet />
+    </ErrorBoundary>
+  );
 };
 
 export const App: React.FC = () => {

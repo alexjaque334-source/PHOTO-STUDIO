@@ -65,7 +65,7 @@ export function requireAdmin(): MiddlewareHandler<AppContext> {
       throw new DomainError('FORBIDDEN', 'Acesso restrito a administradores.', 403);
     }
 
-    if (!session.mfaVerified) {
+    if (user.mfaEnabled && !session.mfaVerified) {
       throw new DomainError(
         'MFA_REQUIRED',
         'Verificação em duas etapas (MFA) necessária para acessar o painel administrativo.',

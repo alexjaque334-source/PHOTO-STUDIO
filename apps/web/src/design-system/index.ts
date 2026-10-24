@@ -41,3 +41,4 @@ export * from './Dropzone';
 export * from './BeforeAfterSlider';
 export * from './PageHeader';
 export * from './AppShell';
+export * from './ErrorBoundary';
