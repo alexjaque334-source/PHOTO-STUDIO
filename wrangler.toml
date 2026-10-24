@@ -23,7 +23,7 @@ EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
 [[d1_databases]]
 binding = "DB"
 database_name = "alegon-photo-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "856d1299-cd62-4d1d-b03f-cf584a444378"
 migrations_dir = "apps/api/migrations"
 
 [triggers]
