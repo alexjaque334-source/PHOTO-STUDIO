@@ -114,10 +114,10 @@ export const RegisterPage: React.FC = () => {
                 <Button
                   variant="primary"
                   fullWidth
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/auth/login')}
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
-                  Ir para o Dashboard
+                  Ir para o Login
                 </Button>
               </div>
             </CardContent>

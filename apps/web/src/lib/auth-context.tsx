@@ -94,10 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     acceptTerms: boolean;
     acceptPrivacy: boolean;
   }) => {
-    const res = await api.auth.register(data);
-    setUser(res.user);
-    setMfaRequired(false);
-    await refreshWallet();
+    await api.auth.register(data);
   };
 
   const logout = async () => {

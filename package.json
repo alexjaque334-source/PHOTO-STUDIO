@@ -2,7 +2,7 @@
   "name": "alegon-ai-photo-studio",
   "private": true,
   "version": "0.1.0",
-  "description": "ALEGON AI Photo Studio — SaaS de edição de fotos com IA (ALEGON Marketing & Tecnologia)",
+  "description": "Photo Studio AI — SaaS de edição de fotos com IA",
   "workspaces": [
     "apps/*",
     "packages/*"

@@ -130,7 +130,7 @@ export async function processCheckout(
     billingType,
     value: valueFloat,
     dueDate,
-    description: `ALEGON AI Photo Studio - ${product.name} (${product.credits} créditos)`,
+    description: `Photo Studio AI - ${product.name} (${product.credits} créditos)`,
     externalReference: internalPaymentId,
   });
 

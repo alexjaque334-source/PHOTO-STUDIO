@@ -146,7 +146,7 @@ export const AdminPage: React.FC = () => {
           {
             id: 'usr_admin_01',
             email: 'apacessoria25@gmail.com',
-            fullName: 'Administrador ALEGON',
+            fullName: 'Administrador Photo Studio AI',
             emailVerified: true,
             roles: ['admin', 'user'],
             mfaEnabled: false,
@@ -183,7 +183,7 @@ export const AdminPage: React.FC = () => {
             id: 'mod_fast_01',
             tier: 'economico',
             modelId: 'google/gemini-2.5-flash-image',
-            label: 'ALEGON Fast (Gemini Flash)',
+            label: 'Photo Studio Fast (Gemini Flash)',
             priority: 10,
             active: true,
             creditsCost: 1,
@@ -192,7 +192,7 @@ export const AdminPage: React.FC = () => {
             id: 'mod_std_01',
             tier: 'padrao',
             modelId: 'google/imagen-3',
-            label: 'ALEGON Studio Pro (Imagen 3)',
+            label: 'Photo Studio Pro (Imagen 3)',
             priority: 10,
             active: true,
             creditsCost: 1,
@@ -201,7 +201,7 @@ export const AdminPage: React.FC = () => {
             id: 'mod_prem_01',
             tier: 'premium',
             modelId: 'black-forest-labs/flux-1.1-pro',
-            label: 'ALEGON Master Ultra (FLUX Pro)',
+            label: 'Photo Studio Ultra (FLUX Pro)',
             priority: 10,
             active: true,
             creditsCost: 2,
@@ -287,7 +287,7 @@ export const AdminPage: React.FC = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
       <PageHeader
-        title="Painel Administrativo ALEGON"
+        title="Painel Administrativo — Photo Studio AI"
         description="Monitoramento operacional, métricas financeiras de IA, gestão de usuários e calibração de modelos."
         badge={
           <Badge variant="danger" size="md">

@@ -266,7 +266,7 @@ export class OpenRouterClient {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
           'HTTP-Referer': this.appUrl,
-          'X-Title': 'ALEGON AI Photo Studio',
+          'X-Title': 'Photo Studio AI',
         },
         body: JSON.stringify(payload),
         signal: controller.signal,

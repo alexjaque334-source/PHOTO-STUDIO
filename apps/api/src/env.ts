@@ -28,8 +28,8 @@ export interface Env {
   OPENROUTER_API_KEY?: string;
   ASAAS_API_KEY?: string;
   ASAAS_WEBHOOK_TOKEN?: string;      // token configurado no painel Asaas (header asaas-access-token)
-  SESSION_SECRET: string;            // HMAC de URLs assinadas e hashes
-  DATA_ENCRYPTION_KEY: string;       // base64 32 bytes (AES-GCM) — segredos MFA
+  SESSION_SECRET?: string;           // HMAC de URLs assinadas e hashes (possui fallback seguro interno)
+  DATA_ENCRYPTION_KEY?: string;      // base64 32 bytes (AES-GCM) — segredos MFA
   RESEND_API_KEY?: string;           // opcional: sem ele, e-mails vão para email_outbox com status dev_logged
 }
 

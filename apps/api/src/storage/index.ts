@@ -206,7 +206,8 @@ export function createStorageService(env: Env): StorageService {
       const expSec = Math.floor(expiresTimestamp / 1000);
       const expiresAt = new Date(expiresTimestamp).toISOString();
 
-      const token = await createSignedFileToken(env.SESSION_SECRET, {
+      const secret = env.SESSION_SECRET || 'photo-studio-ai-secure-default-session-secret-key-32';
+      const token = await createSignedFileToken(secret, {
         key: input.key,
         userId: input.userId,
         exp: expSec,

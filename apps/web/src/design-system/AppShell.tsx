@@ -47,7 +47,7 @@ export interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({
   children,
-  user = { fullName: 'Alexandre Silva', email: 'alex@alegon.com.br', isAdmin: false },
+  user = { fullName: 'Alexandre Silva', email: 'usuario@photostudio.ai', isAdmin: false },
   creditsBalance = { available: 42, expiringSoonCount: 0 },
   navItems,
   onNavigate,
@@ -230,7 +230,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         <Drawer
           isOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
-          title="Menu ALEGON Studio"
+          title="Menu Photo Studio AI"
           position="left"
         >
           <div className="flex flex-col h-full justify-between gap-6">

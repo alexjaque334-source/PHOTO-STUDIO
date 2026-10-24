@@ -130,7 +130,7 @@ export async function createSubscription(
     value: valueFloat,
     nextDueDate,
     cycle: 'MONTHLY',
-    description: `ALEGON AI Photo Studio - Plano ${plan.name} (${plan.monthly_credits} créditos/mês)`,
+    description: `Photo Studio AI - Plano ${plan.name} (${plan.monthly_credits} créditos/mês)`,
     externalReference: internalSubId,
   });
 

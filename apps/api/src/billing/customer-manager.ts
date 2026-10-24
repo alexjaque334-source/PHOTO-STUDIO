@@ -53,7 +53,7 @@ export async function getOrCreateAsaasCustomer(
   }
 
   const rawCpfCnpj = input.cpfCnpj || userRow.cpf_cnpj;
-  const fullName = input.name || userRow.full_name || 'Cliente ALEGON';
+  const fullName = input.name || userRow.full_name || 'Cliente Photo Studio AI';
   const phone = input.phone || userRow.phone || undefined;
 
   if (!rawCpfCnpj) {

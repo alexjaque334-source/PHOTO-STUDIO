@@ -143,7 +143,7 @@ export const AccountPage: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `dados_pessoais_alegon_${user?.id || 'titular'}.json`;
+      a.download = `dados_pessoais_photostudio_${user?.id || 'titular'}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -241,7 +241,7 @@ export const AccountPage: React.FC = () => {
             Dados Cadastrais
           </CardTitle>
           <CardDescription className="text-xs">
-            Informações associadas à sua conta no ALEGON AI Photo Studio.
+            Informações associadas à sua conta no Photo Studio AI.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSaveProfile}>

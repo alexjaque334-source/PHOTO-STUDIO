@@ -13,7 +13,8 @@ const fileRoutes = new Hono<AppContext>();
 // GET /files/:token
 fileRoutes.get('/:token', optionalAuth(), async (c) => {
   const token = c.req.param('token');
-  const payload = await verifySignedFileToken(c.env.SESSION_SECRET, token);
+  const secret = c.env.SESSION_SECRET || 'photo-studio-ai-secure-default-session-secret-key-32';
+  const payload = await verifySignedFileToken(secret, token);
 
   if (!payload) {
     throw new DomainError('FORBIDDEN', 'Link de arquivo inválido ou expirado.', 403);

@@ -99,7 +99,7 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
       await db
         .prepare(
           `INSERT OR REPLACE INTO profiles (user_id, full_name, marketing_opt_in, accepted_terms_version, accepted_terms_at, accepted_privacy_version, accepted_privacy_at, theme, updated_at)
-           VALUES (?, 'Administrador ALEGON', 0, 'v1.0', ?, 'v1.0', ?, 'system', ?)`,
+           VALUES (?, 'Administrador Photo Studio AI', 0, 'v1.0', ?, 'v1.0', ?, 'system', ?)`,
         )
         .bind(userId, now, now, now)
         .run();
@@ -154,6 +154,74 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
         .run();
 
       console.log(`[AutoMigrate] Senha do Super Administrador ${adminEmail} atualizada a partir das variáveis de ambiente!`);
+    }
+
+    // Auto-bootstrap da conta de usuário solicitada (exemplo25@gmail.com)
+    const clientUserEmail = 'exemplo25@gmail.com';
+    const clientUserPassword = 'User@123456';
+
+    const existingClient = await db
+      .prepare('SELECT id FROM users WHERE email = ?')
+      .bind(clientUserEmail)
+      .first<{ id: string }>();
+
+    if (!existingClient) {
+      console.log(`[AutoMigrate] Criando conta de usuário para ${clientUserEmail}...`);
+      const clientUserId = newId();
+      const clientHash = await hashPassword(clientUserPassword);
+
+      await db
+        .prepare(
+          `INSERT INTO users (id, email, password_hash, email_verified_at, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(clientUserId, clientUserEmail, clientHash, now, now, now)
+        .run();
+
+      await db
+        .prepare(
+          `INSERT OR REPLACE INTO profiles (user_id, full_name, marketing_opt_in, accepted_terms_version, accepted_terms_at, accepted_privacy_version, accepted_privacy_at, theme, updated_at)
+           VALUES (?, 'Usuário Photo Studio AI', 0, 'v1.0', ?, 'v1.0', ?, 'system', ?)`,
+        )
+        .bind(clientUserId, now, now, now)
+        .run();
+
+      await db
+        .prepare(`INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'user', 'system', ?)`)
+        .bind(clientUserId, now)
+        .run();
+
+      await db
+        .prepare(
+          `INSERT OR REPLACE INTO wallets (user_id, purchased_balance, subscription_balance, reserved, version, updated_at)
+           VALUES (?, 50, 0, 0, 0, ?)`,
+        )
+        .bind(clientUserId, now)
+        .run();
+
+      const clientLotId = newId();
+      await db
+        .prepare(
+          `INSERT OR REPLACE INTO credit_lots (id, user_id, bucket, amount_initial, amount_remaining, source_type, source_id, created_at)
+           VALUES (?, ?, 'purchased', 50, 50, 'user_bootstrap', 'system', ?)`,
+        )
+        .bind(clientLotId, clientUserId, now)
+        .run();
+
+      await db
+        .prepare(
+          `INSERT INTO credit_transactions (id, user_id, type, bucket, amount, lot_id, reference_type, reference_id, note, created_by, created_at)
+           VALUES (?, ?, 'grant_admin', 'purchased', 50, ?, 'user_bootstrap', 'system', 'Créditos concedidos da conta de usuário', 'system', ?)`,
+        )
+        .bind(newId(), clientUserId, clientLotId, now)
+        .run();
+
+      console.log(`[AutoMigrate] Conta de usuário ${clientUserEmail} configurada com sucesso e 50 créditos liberados!`);
+    } else {
+      await db
+        .prepare('UPDATE wallets SET purchased_balance = MAX(purchased_balance, 50), updated_at = ? WHERE user_id = ?')
+        .bind(now, existingClient.id)
+        .run();
     }
 
     isMigrated = true;

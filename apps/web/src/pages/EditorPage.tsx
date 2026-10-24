@@ -390,7 +390,7 @@ export const EditorPage: React.FC = () => {
     if (!activeVersionUrl || !image) return;
     setIsDownloading(true);
     try {
-      const filename = `${image.title || 'alegon_studio'}_v${
+      const filename = `${image.title || 'photostudio'}_v${
         versions.find((v) => v.id === activeVersionId)?.versionNumber || 'edit'
       }`;
       await convertAndDownload(activeVersionUrl, filename, format);
@@ -411,7 +411,7 @@ export const EditorPage: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto space-y-8 pb-12">
         <PageHeader
-          title="ALEGON Studio de Edição"
+          title="Photo Studio AI — Estúdio de Edição"
           description="Envie sua foto para aplicar as 14 ferramentas profissionais de inteligência artificial generativa."
           badge={<Badge variant="gold">Cockpit Pro</Badge>}
         />
@@ -847,7 +847,7 @@ export const EditorPage: React.FC = () => {
             )}
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Garantia ALEGON: Em caso de qualquer instabilidade técnica do modelo de IA ou falha de conexão, a reserva de créditos é estornada integralmente para o seu saldo.
+              Garantia Photo Studio AI: Em caso de qualquer instabilidade técnica do modelo de IA ou falha de conexão, a reserva de créditos é estornada integralmente para o seu saldo.
             </p>
           </div>
         </Modal>

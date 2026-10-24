@@ -1,4 +1,4 @@
-# ALEGON AI Photo Studio — Cloudflare Workers (Modo Free Tier 100% Gratuito)
+# Photo Studio AI — Cloudflare Workers (Modo Free Tier 100% Gratuito)
 name = "photo-studio"
 main = "src/index.ts"
 compatibility_date = "2026-10-24"
@@ -16,7 +16,7 @@ APP_URL = "https://photo-studio.pages.dev"
 ADMIN_EMAILS = "apacessoria25@gmail.com"
 ASAAS_BASE_URL = "https://api-sandbox.asaas.com/v3"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-EMAIL_FROM = "ALEGON AI Photo Studio <nao-responda@alegon.com.br>"
+EMAIL_FROM = "Photo Studio AI <exemplo25@gmail.com>"
 
 [[d1_databases]]
 binding = "DB"

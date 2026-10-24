@@ -92,7 +92,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  helperText="Insira o e-mail associado à sua conta ALEGON"
+                  helperText="Insira o e-mail associado à sua conta do Photo Studio AI"
                 />
               </CardContent>
 

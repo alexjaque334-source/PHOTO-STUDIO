@@ -188,13 +188,6 @@ authRoutes.post('/register', async (c) => {
     ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for'),
   });
 
-  const reqInfo = {
-    userAgent: c.req.header('user-agent'),
-    ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for'),
-  };
-  const { token: sessionToken, session } = await createSession(c.env.DB, userId, true, reqInfo);
-  setSessionCookie(c, sessionToken, new Date(session.expiresAt));
-
   return c.json(
     {
       user: {
@@ -672,7 +665,7 @@ authRoutes.post('/sessions/revoke-others', requireAuth(), async (c) => {
 authRoutes.post('/mfa/setup', requireAuth(), async (c) => {
   const user = c.get('user');
   const secret = generateTotpSecret(20);
-  const otpauthUrl = buildOtpauthUrl(user.email, 'ALEGON AI Photo Studio', secret);
+  const otpauthUrl = buildOtpauthUrl(user.email, 'Photo Studio AI', secret);
   const encryptedSecret = await encryptAesGcm(c.env.DATA_ENCRYPTION_KEY, secret);
   const now = nowIso();
 

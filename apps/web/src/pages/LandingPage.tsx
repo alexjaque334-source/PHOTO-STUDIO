@@ -227,7 +227,7 @@ export const LandingPage: React.FC = () => {
                 beforeImage={heroOriginal}
                 afterImage={heroEnhanced}
                 beforeLabel="Foto Original"
-                afterLabel="Restauração ALEGON IA"
+                afterLabel="Restauração com IA"
                 initialPosition={50}
               />
             </div>
@@ -275,7 +275,7 @@ export const LandingPage: React.FC = () => {
             <Badge variant="secondary">Engenharia Editorial</Badge>
             <h2 className="text-3xl font-bold tracking-tight">Desenvolvido para Fluxos de Trabalho Reais</h2>
             <p className="text-sm text-muted-foreground">
-              Nada de filtros superficiais. O ALEGON Studio entrega ferramentas utilitárias com rigor profissional.
+              Nada de filtros superficiais. O Photo Studio AI entrega ferramentas utilitárias com rigor profissional.
             </p>
           </div>
 
@@ -462,7 +462,7 @@ export const LandingPage: React.FC = () => {
               features={[
                 '150 créditos renovados todo mês',
                 'Máxima prioridade de fila',
-                'Suporte prioritário ALEGON',
+                'Suporte prioritário especializado',
                 'Cancele quando quiser com 1 clique',
                 'Acesso antecipado a novos tiers',
               ]}
@@ -478,7 +478,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold tracking-tight">Perguntas Frequentes</h2>
-            <p className="text-xs text-muted-foreground">Tudo o que você precisa saber sobre o ALEGON AI Photo Studio</p>
+            <p className="text-xs text-muted-foreground">Tudo o que você precisa saber sobre o Photo Studio AI</p>
           </div>
 
           <div className="space-y-3">
@@ -516,7 +516,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-col items-center md:items-start gap-2">
             <Logo size="sm" />
             <span className="text-[11px]">
-              ALEGON Marketing & Tecnologia — Todos os direitos reservados.
+              Photo Studio AI — Todos os direitos reservados.
             </span>
           </div>
 

@@ -81,8 +81,8 @@ export const DesignSystemPage: React.FC = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
       <PageHeader
-        title="ALEGON Design System & Component Studio"
-        description="Catálogo canônico e interativo de componentes sofisticados e acessíveis (WCAG 2.2 AA) da ALEGON Marketing & Tecnologia."
+        title="Design System & Component Studio"
+        description="Catálogo canônico e interativo de componentes sofisticados e acessíveis (WCAG 2.2 AA) do Photo Studio AI."
         badge={
           <Badge variant="gold" size="md">
             v1.0 Canônico
@@ -167,7 +167,7 @@ export const DesignSystemPage: React.FC = () => {
             <CardHeader>
               <CardTitle>Identidade Visual & Marcas da Empresa</CardTitle>
               <CardDescription>
-                Renderização pura em SVG escalável do ALEGON AI Photo Studio.
+                Renderização pura em SVG escalável do Photo Studio AI.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-8 py-4">

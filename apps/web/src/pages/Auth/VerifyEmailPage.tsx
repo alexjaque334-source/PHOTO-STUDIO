@@ -79,7 +79,7 @@ export const VerifyEmailPage: React.FC = () => {
                 </div>
                 <h2 className="text-lg font-bold text-foreground">E-mail Confirmado com Sucesso!</h2>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Sua conta está totalmente ativada e pronta para uso profissional no ALEGON Studio.
+                  Sua conta está totalmente ativada e pronta para uso profissional no Photo Studio AI.
                 </p>
                 <div className="pt-2">
                   <Button
