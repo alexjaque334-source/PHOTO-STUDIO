@@ -1,7 +1,7 @@
 # ALEGON AI Photo Studio — Configuração Cloudflare Workers na raiz
-name = "alegon-photo-studio"
+name = "photo-studio"
 main = "apps/api/src/index.ts"
-compatibility_date = "2025-06-01"
+compatibility_date = "2026-10-24"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
