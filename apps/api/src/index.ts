@@ -41,7 +41,7 @@ app.use('/api/*', securityHeaders());
 app.use('/api/*', csrfProtection()); // isenta /api/webhooks/* (autenticação por token)
 app.use('/api/*', async (c, next) => {
   if (c.env.DB) {
-    await ensureDatabaseSchema(c.env.DB);
+    await ensureDatabaseSchema(c.env);
   }
   await next();
 });

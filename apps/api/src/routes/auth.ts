@@ -188,13 +188,22 @@ authRoutes.post('/register', async (c) => {
     ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for'),
   });
 
+  const reqInfo = {
+    userAgent: c.req.header('user-agent'),
+    ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for'),
+  };
+  const { token: sessionToken, session } = await createSession(c.env.DB, userId, true, reqInfo);
+  setSessionCookie(c, sessionToken, new Date(session.expiresAt));
+
   return c.json(
     {
       user: {
         id: userId,
         email: normalizedEmail,
         fullName: body.fullName.trim(),
-        emailVerified: false,
+        emailVerified: isFirstOrAdmin,
+        roles: isFirstOrAdmin ? ['user', 'admin'] : ['user'],
+        mfaEnabled: false,
       },
     },
     201,
@@ -266,7 +275,7 @@ authRoutes.post('/login', async (c) => {
   const mfaEnabled = Boolean(mfaRecord && mfaRecord.enabled_at);
 
   const isAdmin = roleNames.includes('admin');
-  const mfaRequired = mfaEnabled || isAdmin;
+  const mfaRequired = mfaEnabled;
 
   // Cria sessão (se mfaRequired for true, inicia com mfa_verified = false)
   const reqInfo = {

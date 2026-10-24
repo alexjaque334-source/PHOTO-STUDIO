@@ -20,6 +20,9 @@ export interface Env {
   OPENROUTER_BASE_URL: string;
   EMAIL_FROM: string;
   ADMIN_EMAILS?: string;             // e-mails separados por vírgula com permissão de super-admin auto-atribuída
+  ADMIN_PASSWORD?: string;           // senha inicial opcional configurada pelo administrador no painel
+  ADMIN_INITIAL_PASSWORD?: string;
+  PASSWORD?: string;
 
   // Secrets
   OPENROUTER_API_KEY?: string;

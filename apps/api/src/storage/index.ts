@@ -140,12 +140,12 @@ export function createStorageService(env: Env): StorageService {
       if (row.bytes instanceof ArrayBuffer) {
         buf = row.bytes;
       } else if (ArrayBuffer.isView(row.bytes)) {
-        buf = row.bytes.buffer.slice(
-          row.bytes.byteOffset,
-          row.bytes.byteOffset + row.bytes.byteLength,
-        );
+        const u8 = new Uint8Array(row.bytes.byteLength);
+        u8.set(new Uint8Array(row.bytes.buffer, row.bytes.byteOffset, row.bytes.byteLength));
+        buf = u8.buffer;
       } else {
-        buf = new Uint8Array(row.bytes as number[]).buffer;
+        const u8 = new Uint8Array(row.bytes as number[]);
+        buf = u8.buffer;
       }
 
       return { bytes: buf, mime: row.mime || 'application/octet-stream' };

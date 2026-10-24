@@ -9,7 +9,7 @@ import { execute, queryAll, queryOne } from '../db';
 import { nowIso } from '../lib/http';
 import { randomToken, sha256Hex } from './crypto';
 
-export const SESSION_COOKIE_PROD = '__Host-alegon_session';
+export const SESSION_COOKIE_PROD = 'alegon_session';
 export const SESSION_COOKIE_DEV = 'alegon_session';
 export const SESSION_TTL_DAYS = 30;
 

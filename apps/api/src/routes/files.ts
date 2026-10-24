@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import type { AppContext } from '../env';
 import { DomainError } from '../contracts';
-import { verifySignedFileToken } from '../storage';
+import { createStorageService, verifySignedFileToken } from '../storage';
 import { optionalAuth } from '../middleware/auth';
 
 const fileRoutes = new Hono<AppContext>();
@@ -25,13 +25,14 @@ fileRoutes.get('/:token', optionalAuth(), async (c) => {
     throw new DomainError('FORBIDDEN', 'Você não tem permissão para acessar este arquivo.', 403);
   }
 
-  const obj = await c.env.MEDIA.get(payload.key);
-  if (!obj) {
+  const storage = createStorageService(c.env);
+  const file = await storage.getObject(payload.key);
+  if (!file) {
     throw new DomainError('NOT_FOUND', 'Arquivo não encontrado no servidor de mídia.', 404);
   }
 
   const headers = new Headers();
-  headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
+  headers.set('Content-Type', file.mime || 'application/octet-stream');
   headers.set('Cache-Control', 'private, max-age=60');
 
   if (payload.dl) {
@@ -39,11 +40,9 @@ fileRoutes.get('/:token', optionalAuth(), async (c) => {
     headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
   }
 
-  if (obj.size) {
-    headers.set('Content-Length', obj.size.toString());
-  }
+  headers.set('Content-Length', file.bytes.byteLength.toString());
 
-  return new Response(obj.body, {
+  return new Response(file.bytes, {
     status: 200,
     headers,
   });

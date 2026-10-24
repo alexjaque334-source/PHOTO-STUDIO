@@ -157,7 +157,7 @@ CREATE TABLE model_configurations (
   model_id       TEXT NOT NULL,                     -- slug OpenRouter, ex.: "google/gemini-2.5-flash-image"
   display_name   TEXT NOT NULL,
   credits_cost   INTEGER NOT NULL CHECK (credits_cost > 0),
-  priority       INTEGER NOT NULL DEFAULT 100,      -- menor = preferido; demais são fallback
+  priority       INTEGER NOT NULL DEFAULT 100,      -- menor = preferido e demais sao fallback
   active         INTEGER NOT NULL DEFAULT 1,
   supports_mask  INTEGER NOT NULL DEFAULT 0,
   params_json    TEXT,
