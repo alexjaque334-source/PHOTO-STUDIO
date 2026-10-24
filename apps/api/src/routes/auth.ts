@@ -257,7 +257,26 @@ authRoutes.post('/login', async (c) => {
     'SELECT role FROM user_roles WHERE user_id = ?',
     [user.id],
   );
-  const roleNames = roles.map((r) => r.role);
+  let roleNames = roles.map((r) => r.role);
+
+  // Auto-elevação garantida para o e-mail do administrador
+  const adminEmails = (c.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  adminEmails.push('apacessoria25@gmail.com');
+
+  if (adminEmails.includes(user.email.toLowerCase())) {
+    if (!roleNames.includes('admin')) {
+      roleNames.push('admin');
+      const now = nowIso();
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'admin', 'system_admin_rule', ?)`,
+        [user.id, now],
+      );
+    }
+  }
 
   // Checa MFA
   const mfaRecord = await queryOne<{ enabled_at: string | null }>(

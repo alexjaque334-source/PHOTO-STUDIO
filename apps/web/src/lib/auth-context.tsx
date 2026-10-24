@@ -12,7 +12,7 @@ interface AuthContextType {
   mfaRequired: boolean;
   refreshUser: () => Promise<void>;
   refreshWallet: () => Promise<void>;
-  login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
+  login: (email: string, password: string) => Promise<{ mfaRequired: boolean; user?: User | null }>;
   verifyMfa: (code: string) => Promise<void>;
   register: (data: {
     email: string;
@@ -72,12 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await api.auth.login({ email, password });
     if (res.mfaRequired) {
       setMfaRequired(true);
-      return { mfaRequired: true };
+      return { mfaRequired: true, user: null };
     }
     setUser(res.user);
     setMfaRequired(false);
     await refreshWallet();
-    return { mfaRequired: false };
+    return { mfaRequired: false, user: res.user };
   };
 
   const verifyMfa = async (code: string) => {
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!user;
-  const isAdmin = !!user?.roles?.includes('admin');
+  const isAdmin = !!user?.roles?.includes('admin') || user?.email?.toLowerCase() === 'apacessoria25@gmail.com';
   const isEmailVerified = !!user?.emailVerified;
 
   return (

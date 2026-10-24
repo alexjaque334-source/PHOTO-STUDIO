@@ -40,7 +40,15 @@ export const LoginPage: React.FC = () => {
       if (res.mfaRequired) {
         setMfaStep(true);
       } else {
-        navigate(from, { replace: true });
+        const customPath = (location.state as any)?.from?.pathname;
+        const isAdminUser = res.user?.roles?.includes('admin') || email.toLowerCase().trim() === 'apacessoria25@gmail.com';
+        if (customPath && customPath !== '/auth/login') {
+          navigate(customPath, { replace: true });
+        } else if (isAdminUser) {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Falha na autenticação. Verifique suas credenciais.');
@@ -56,7 +64,15 @@ export const LoginPage: React.FC = () => {
 
     try {
       await verifyMfa(mfaCode.trim());
-      navigate(from, { replace: true });
+      const customPath = (location.state as any)?.from?.pathname;
+      const isAdminUser = email.toLowerCase().trim() === 'apacessoria25@gmail.com';
+      if (customPath && customPath !== '/auth/login') {
+        navigate(customPath, { replace: true });
+      } else if (isAdminUser) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Código de autenticação em dois fatores inválido.');
     } finally {

@@ -151,14 +151,32 @@ export const AppShell: React.FC<AppShellProps> = ({
             <ThemeToggle />
 
             {/* Avatar / Usuário */}
-            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border/60">
+            <div className="flex items-center gap-2 pl-2 border-l border-border/60">
               <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs select-none">
                 {user.fullName.substring(0, 2).toUpperCase()}
               </div>
               <div className="hidden md:flex flex-col text-left">
-                <span className="text-xs font-semibold leading-tight">{user.fullName}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold leading-tight">{user.fullName}</span>
+                  {user.isAdmin && (
+                    <Badge variant="danger" size="sm" className="text-[9px] py-0 px-1 font-bold uppercase">
+                      Admin
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-[10px] text-muted-foreground leading-tight">{user.email}</span>
               </div>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  title="Encerrar Sessão (Deslogar)"
+                  aria-label="Encerrar Sessão"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>

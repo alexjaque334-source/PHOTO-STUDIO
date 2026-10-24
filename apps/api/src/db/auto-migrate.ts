@@ -140,20 +140,28 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
         .run();
 
       console.log(`[AutoMigrate] Super Administrador ${adminEmail} configurado com sucesso e 50 créditos liberados!`);
-    } else if (env.ADMIN_PASSWORD || env.PASSWORD) {
-      // Se o usuário configurou uma senha explicitamente via variável, atualiza a senha no banco
-      const updatedHash = await hashPassword(adminPassword);
-      await db
-        .prepare('UPDATE users SET password_hash = ?, failed_login_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?')
-        .bind(updatedHash, now, existingAdmin.id)
-        .run();
-
+    } else {
+      // Garante SEMPRE a role 'admin', status ativo e email verificado para o Super Administrador
       await db
         .prepare(`INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'admin', 'system_bootstrap', ?)`)
         .bind(existingAdmin.id, now)
         .run();
 
-      console.log(`[AutoMigrate] Senha do Super Administrador ${adminEmail} atualizada a partir das variáveis de ambiente!`);
+      await db
+        .prepare(`UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?), status = 'active' WHERE id = ?`)
+        .bind(now, existingAdmin.id)
+        .run();
+
+      if (env.ADMIN_PASSWORD || env.PASSWORD) {
+        // Se o usuário configurou uma senha explicitamente via variável, atualiza a senha no banco
+        const updatedHash = await hashPassword(adminPassword);
+        await db
+          .prepare('UPDATE users SET password_hash = ?, failed_login_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?')
+          .bind(updatedHash, now, existingAdmin.id)
+          .run();
+
+        console.log(`[AutoMigrate] Senha do Super Administrador ${adminEmail} atualizada a partir das variáveis de ambiente!`);
+      }
     }
 
     // Auto-bootstrap da conta de usuário solicitada (exemplo25@gmail.com)

@@ -121,7 +121,7 @@ const AppShellLayout: React.FC = () => {
         navigate('/auth/login');
       }}
       user={{
-        fullName: user?.fullName || 'Usuário Studio',
+        fullName: user?.fullName || (isAdmin ? 'Administrador Photo Studio' : 'Usuário Studio'),
         email: user?.email || '',
         isAdmin,
       }}
