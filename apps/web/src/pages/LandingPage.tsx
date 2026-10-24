@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Logo,
@@ -31,11 +31,30 @@ import {
   Coins,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { api } from '@/lib/api-client';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const [livePlans, setLivePlans] = useState<any[]>([]);
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    api.billing
+      .getCatalog()
+      .then((res) => {
+        if (!isMounted) return;
+        if (res?.plans) setLivePlans(res.plans);
+        if (res?.products) setLiveProducts(res.products);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Amostras de alta qualidade para o comparador Before/After
   const heroOriginal =
@@ -415,60 +434,81 @@ export const LandingPage: React.FC = () => {
               onSelect={() => navigate('/auth/register')}
             />
 
-            {/* Pacote Creator */}
-            <PriceCard
-              name="Pacote Creator"
-              description="Pacote de créditos avulsos para criadores e lojistas."
-              priceFormatted="R$ 39,90"
-              periodLabel="pagamento único"
-              creditsLabel="50 Créditos (R$ 0,79/foto)"
-              features={[
-                '50 créditos com validade de 12 meses',
-                'Sem cobrança mensal',
-                'Acesso a todos os modelos',
-                'Liberação Pix instantânea',
-                'Histórico não-destrutivo',
-              ]}
-              buttonText="Adquirir Pacote"
-              onSelect={() => navigate('/auth/register')}
-            />
+            {/* Pacote Creator (Dinâmico) */}
+            {(() => {
+              const p = liveProducts.find((item) => item.code === 'creator_pack');
+              const price = p ? `R$ ${(p.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 39,90';
+              const credits = p?.credits ?? 50;
+              return (
+                <PriceCard
+                  name={p?.name || 'Pacote Creator'}
+                  description={p?.description || 'Pacote de créditos avulsos para criadores e lojistas.'}
+                  priceFormatted={price}
+                  periodLabel="pagamento único"
+                  creditsLabel={`${credits} Créditos`}
+                  features={[
+                    `${credits} créditos com validade de 12 meses`,
+                    'Sem cobrança mensal',
+                    'Acesso a todos os modelos',
+                    'Liberação Pix instantânea',
+                    'Histórico não-destrutivo',
+                  ]}
+                  buttonText="Adquirir Pacote"
+                  onSelect={() => navigate('/auth/register')}
+                />
+              );
+            })()}
 
-            {/* Pacote Pro (Popular) */}
-            <PriceCard
-              name="Pacote Pro"
-              description="O pacote mais procurado por estúdios e agências."
-              priceFormatted="R$ 69,90"
-              periodLabel="pagamento único"
-              creditsLabel="100 Créditos (R$ 0,69/foto)"
-              isPopular
-              features={[
-                '100 créditos com validade de 12 meses',
-                'Maior economia por foto',
-                'Prioridade na fila de renderização',
-                'Retenção segura de 90 dias',
-                'Download em PNG, JPG e WebP',
-              ]}
-              buttonText="Garantir Oferta"
-              onSelect={() => navigate('/auth/register')}
-            />
+            {/* Pacote Pro (Popular Dinâmico) */}
+            {(() => {
+              const p = liveProducts.find((item) => item.code === 'pro_pack');
+              const price = p ? `R$ ${(p.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 69,90';
+              const credits = p?.credits ?? 100;
+              return (
+                <PriceCard
+                  name={p?.name || 'Pacote Pro'}
+                  description={p?.description || 'O pacote mais procurado por estúdios e agências.'}
+                  priceFormatted={price}
+                  periodLabel="pagamento único"
+                  creditsLabel={`${credits} Créditos`}
+                  isPopular
+                  features={[
+                    `${credits} créditos com validade de 12 meses`,
+                    'Maior economia por foto',
+                    'Prioridade na fila de renderização',
+                    'Retenção segura de 90 dias',
+                    'Download em PNG, JPG e WebP',
+                  ]}
+                  buttonText="Garantir Oferta"
+                  onSelect={() => navigate('/auth/register')}
+                />
+              );
+            })()}
 
-            {/* Assinatura Mensal */}
-            <PriceCard
-              name="Assinatura Studio"
-              description="Fluxo contínuo para quem edita fotos profissionalmente toda semana."
-              priceFormatted="R$ 79,90"
-              periodLabel="por mês"
-              creditsLabel="150 Créditos / mês"
-              features={[
-                '150 créditos renovados todo mês',
-                'Máxima prioridade de fila',
-                'Suporte prioritário especializado',
-                'Cancele quando quiser com 1 clique',
-                'Acesso antecipado a novos tiers',
-              ]}
-              buttonText="Assinar Plano"
-              onSelect={() => navigate('/auth/register')}
-            />
+            {/* Assinatura Mensal (Dinâmica) */}
+            {(() => {
+              const plan = livePlans.find((item) => item.code === 'studio_monthly');
+              const price = plan ? `R$ ${(plan.price_cents / 100).toFixed(2).replace('.', ',')}` : 'R$ 79,90';
+              const credits = plan?.monthly_credits ?? 150;
+              return (
+                <PriceCard
+                  name={plan?.name || 'Assinatura Studio'}
+                  description={plan?.description || 'Fluxo contínuo para quem edita fotos profissionalmente toda semana.'}
+                  priceFormatted={price}
+                  periodLabel="por mês"
+                  creditsLabel={`${credits} Créditos / mês`}
+                  features={[
+                    `${credits} créditos renovados todo mês`,
+                    'Máxima prioridade de fila',
+                    'Suporte prioritário especializado',
+                    'Cancele quando quiser com 1 clique',
+                    'Acesso antecipado a novos tiers',
+                  ]}
+                  buttonText="Assinar Plano"
+                  onSelect={() => navigate('/auth/register')}
+                />
+              );
+            })()}
           </div>
         </div>
       </section>

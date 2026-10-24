@@ -712,5 +712,94 @@ export const api = {
         body: JSON.stringify(settings),
       });
     },
+
+    async getPlans() {
+      return request<{ items: Array<{
+        id: string;
+        code: string;
+        name: string;
+        description: string;
+        monthly_credits: number;
+        price_cents: number;
+        active: number;
+      }> }>('/api/admin/billing/plans');
+    },
+
+    async updatePlan(id: string, data: { name?: string; description?: string; priceCents?: number; monthlyCredits?: number; active?: boolean }) {
+      return request<{ ok: boolean; id: string }>(`/api/admin/billing/plans/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async getFeedbacks() {
+      return request<{ items: Array<{
+        id: string;
+        user_id: string | null;
+        user_email: string;
+        user_name: string | null;
+        rating: number;
+        category: string;
+        message: string;
+        status: string;
+        created_at: string;
+      }> }>('/api/admin/feedbacks');
+    },
+
+    async updateFeedbackStatus(id: string, status: 'novo' | 'lido' | 'resolvido') {
+      return request<{ ok: boolean; id: string; status: string }>(`/api/admin/feedbacks/${encodeURIComponent(id)}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      });
+    },
+
+    async getPayments(status?: string, cursor?: string) {
+      const params = new URLSearchParams();
+      if (status) params.set('status', status);
+      if (cursor) params.set('cursor', cursor);
+      return request<{
+        items: Array<{
+          id: string;
+          user_id: string;
+          asaas_payment_id: string;
+          value_cents: number;
+          net_value_cents?: number;
+          billing_type: string;
+          status: string;
+          created_at: string;
+          paid_at?: string;
+        }>;
+        nextCursor?: string;
+      }>(`/api/admin/billing/payments?${params.toString()}`);
+    },
+
+    async refundPayment(id: string, reason: string) {
+      return request<{ ok: boolean }>(`/api/admin/billing/payments/${encodeURIComponent(id)}/refund`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+    },
+
+    async getAiQueueMonitor() {
+      return request<{
+        health: {
+          status: 'healthy' | 'degraded';
+          successRate: number;
+          activeWorkers: number;
+          queueDepth: number;
+          totalJobsToday: number;
+          failedJobsToday: number;
+        };
+        models: Array<{
+          id: string;
+          name: string;
+          tier: string;
+          status: string;
+          avgLatencyMs: number;
+          availability: string;
+          credits: number;
+        }>;
+      }>('/api/admin/ai/queue-monitor');
+    },
   },
 };

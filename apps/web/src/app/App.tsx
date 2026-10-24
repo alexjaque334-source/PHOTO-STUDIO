@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
-import { AppShell, Spinner, NavItem, ErrorBoundary } from '@/design-system';
+import { AppShell, AdminShell, Spinner, NavItem, ErrorBoundary } from '@/design-system';
 import {
   LayoutDashboard,
   Sparkles,
@@ -92,23 +92,6 @@ const AppShellLayout: React.FC = () => {
       icon: <UserIcon className="h-4 w-4" />,
       active: location.pathname.startsWith('/account'),
     },
-    ...(isAdmin
-      ? [
-          {
-            label: 'Painel Admin',
-            href: '/admin',
-            icon: <ShieldAlert className="h-4 w-4" />,
-            active: location.pathname.startsWith('/admin'),
-            isAdmin: true,
-          },
-        ]
-      : []),
-    {
-      label: 'Design System',
-      href: '/design',
-      icon: <Sliders className="h-4 w-4" />,
-      active: location.pathname.startsWith('/design'),
-    },
   ];
 
   return (
@@ -121,9 +104,9 @@ const AppShellLayout: React.FC = () => {
         navigate('/auth/login');
       }}
       user={{
-        fullName: user?.fullName || (isAdmin ? 'Administrador Photo Studio' : 'Usuário Studio'),
+        fullName: user?.fullName || 'Usuário Studio',
         email: user?.email || '',
-        isAdmin,
+        isAdmin: false,
       }}
       creditsBalance={{
         available: walletBalance?.available ?? 0,
@@ -134,6 +117,28 @@ const AppShellLayout: React.FC = () => {
         <Outlet />
       </ErrorBoundary>
     </AppShell>
+  );
+};
+
+/**
+ * Layout Executivo Exclusivo para Administrador (sem elementos de usuário)
+ */
+const AdminShellLayout: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <AdminShell
+      userEmail={user?.email || 'apacessoria25@gmail.com'}
+      onLogout={async () => {
+        await logout();
+        navigate('/auth/login');
+      }}
+    >
+      <ErrorBoundary fallbackTitle="Cockpit Executivo">
+        <Outlet />
+      </ErrorBoundary>
+    </AdminShell>
   );
 };
 
@@ -202,7 +207,7 @@ export const App: React.FC = () => {
             <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
 
-            {/* ── Rotas Protegidas do Studio ── */}
+            {/* ── Rotas Protegidas do Studio (Cliente) ── */}
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShellLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
@@ -212,13 +217,14 @@ export const App: React.FC = () => {
                 <Route path="/wallet" element={<WalletPage />} />
                 <Route path="/pricing" element={<PlansPage />} />
                 <Route path="/account" element={<AccountPage />} />
-                <Route path="/design" element={<DesignSystemPage />} />
+              </Route>
+            </Route>
 
-                {/* ── Rotas Administrativas ── */}
-                <Route element={<AdminRoute />}>
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/admin/*" element={<AdminPage />} />
-                </Route>
+            {/* ── Rotas Administrativas Exclusivas (Cockpit Executivo Isolado) ── */}
+            <Route element={<AdminRoute />}>
+              <Route element={<AdminShellLayout />}>
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin/*" element={<AdminPage />} />
               </Route>
             </Route>
 

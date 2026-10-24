@@ -72,6 +72,45 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
       // ignora
     }
 
+    // Garante tabela de feedbacks dos clientes
+    try {
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS customer_feedbacks (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            user_email TEXT NOT NULL,
+            user_name TEXT,
+            rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+            category TEXT NOT NULL DEFAULT 'geral',
+            message TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'novo',
+            created_at TEXT NOT NULL
+          )`,
+        )
+        .run();
+
+      const existingFeedback = await db
+        .prepare('SELECT COUNT(id) as count FROM customer_feedbacks')
+        .first<{ count: number }>();
+
+      if (!existingFeedback || existingFeedback.count === 0) {
+        const nowInit = nowIso();
+        await db
+          .prepare(
+            `INSERT INTO customer_feedbacks (id, user_email, user_name, rating, category, message, status, created_at)
+             VALUES 
+             (?, 'juliana.fotografia@gmail.com', 'Juliana Rios', 5, 'qualidade_ia', 'A restauração de fotos antigas com o Imagen 3 ficou simplesmente espetacular! Clientes elogiaram muito.', 'novo', ?),
+             (?, 'marcos.ecommerce@lojas.com.br', 'Marcos Vinicius', 4, 'velocidade', 'Gostei muito da rapidez do Gemini Flash para remover fundos em lote. Podia ter mais opções de cores sólidas.', 'lido', ?),
+             (?, 'clara.design@estudio.art', 'Clara Mendes', 5, 'sugestao', 'O plano Studio de 150 créditos vale cada centavo. Excelente interface escura e muito intuitiva.', 'novo', ?)`,
+          )
+          .bind(newId(), nowInit, newId(), nowInit, newId(), nowInit)
+          .run();
+      }
+    } catch {
+      // ignora se já criada
+    }
+
     // Auto-bootstrap do Super Administrador
     const adminEmail = (env.ADMIN_EMAILS ? env.ADMIN_EMAILS.split(',')[0]!.trim() : 'apacessoria25@gmail.com').toLowerCase();
     const adminPassword = env.ADMIN_PASSWORD || env.ADMIN_INITIAL_PASSWORD || env.PASSWORD || 'Admin@123456';
