@@ -111,11 +111,22 @@ authRoutes.post('/register', async (c) => {
   const now = nowIso();
   const passwordHash = await hashPassword(body.password);
 
-  // Insere usuário e perfil
+  // Verifica se é super-admin (configurado via env ADMIN_EMAILS ou se é o primeiro usuário do sistema)
+  const configuredAdmins = (c.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const countRow = await queryOne<{ total: number }>(
+    c.env.DB,
+    'SELECT COUNT(*) as total FROM users',
+  );
+  const isFirstOrAdmin = (countRow?.total ?? 0) === 0 || configuredAdmins.includes(normalizedEmail);
+
+  // Insere usuário e perfil (se for admin/primeiro usuário, e-mail já nasce verificado)
   await execute(
     c.env.DB,
-    `INSERT INTO users (id, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-    [userId, normalizedEmail, passwordHash, now, now],
+    `INSERT INTO users (id, email, password_hash, email_verified_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId, normalizedEmail, passwordHash, isFirstOrAdmin ? now : null, now, now],
   );
 
   await execute(
@@ -125,19 +136,27 @@ authRoutes.post('/register', async (c) => {
     [userId, body.fullName.trim(), body.marketingOptIn ? 1 : 0, now, now, now],
   );
 
-  // Atribui role 'user'
+  // Atribui role 'user' (e 'admin' caso elegível)
   await execute(
     c.env.DB,
     `INSERT INTO user_roles (user_id, role, granted_at) VALUES (?, 'user', ?)`,
     [userId, now],
   );
+  if (isFirstOrAdmin) {
+    await execute(
+      c.env.DB,
+      `INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'admin', 'system_bootstrap', ?)`,
+      [userId, now],
+    );
+  }
 
-  // Inicializa carteira de créditos
+  // Inicializa carteira de créditos (bônus inicial de 50 créditos se for o administrador)
+  const initialCredits = isFirstOrAdmin ? 50 : 0;
   await execute(
     c.env.DB,
     `INSERT INTO wallets (user_id, purchased_balance, subscription_balance, reserved, version, updated_at)
-     VALUES (?, 0, 0, 0, 0, ?)`,
-    [userId, now],
+     VALUES (?, ?, 0, 0, 0, ?)`,
+    [userId, initialCredits, now],
   );
 
   // Gera token de confirmação de e-mail (24h)

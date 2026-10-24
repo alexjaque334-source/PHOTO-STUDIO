@@ -19,6 +19,7 @@ export interface Env {
   ASAAS_BASE_URL: string;
   OPENROUTER_BASE_URL: string;
   EMAIL_FROM: string;
+  ADMIN_EMAILS?: string;             // e-mails separados por vírgula com permissão de super-admin auto-atribuída
 
   // Secrets
   OPENROUTER_API_KEY?: string;
