@@ -802,4 +802,20 @@ export const api = {
       }>('/api/admin/ai/queue-monitor');
     },
   },
+
+  // ── Customer Feedback ──
+  feedback: {
+    async submit(data: {
+      rating: number;
+      category?: 'qualidade_ia' | 'velocidade' | 'sugestao' | 'geral' | 'bug';
+      message: string;
+      email?: string;
+      name?: string;
+    }) {
+      return request<{ ok: boolean; id: string; message: string }>('/api/feedback', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+  },
 };

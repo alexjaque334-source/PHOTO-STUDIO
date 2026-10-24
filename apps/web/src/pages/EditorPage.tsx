@@ -40,6 +40,7 @@ import {
   Eye,
   FileImage,
   Upload,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -210,6 +211,15 @@ export const EditorPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('Iniciando processamento...');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Estados de Feedback (Opção A)
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedbackCategory, setFeedbackCategory] = useState<'qualidade_ia' | 'velocidade' | 'sugestao' | 'geral' | 'bug'>('qualidade_ia');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
 
   // Estados de Upload caso não haja imagem carregada
   const [isUploading, setIsUploading] = useState(false);
@@ -395,10 +405,41 @@ export const EditorPage: React.FC = () => {
       }`;
       await convertAndDownload(activeVersionUrl, filename, format);
       success(`Download em ${format.toUpperCase()} iniciado com sucesso!`, 'Exportado');
+
+      // Se ainda não avaliou nesta sessão, convida com o modal após 1.2s
+      if (!hasSubmittedFeedback) {
+        setTimeout(() => {
+          setIsFeedbackModalOpen(true);
+        }, 1200);
+      }
     } catch (err: any) {
       error(err.message || 'Falha ao processar download do arquivo.', 'Erro no Download');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  // Envio de Feedback do Assinante para o Painel Admin
+  const handleSubmitFeedback = async () => {
+    if (!feedbackMessage.trim()) {
+      error('Por favor, digite um breve comentário sobre sua experiência.', 'Comentário Obrigatório');
+      return;
+    }
+    setIsSubmittingFeedback(true);
+    try {
+      await api.feedback.submit({
+        rating: feedbackRating,
+        category: feedbackCategory,
+        message: feedbackMessage.trim(),
+      });
+      setHasSubmittedFeedback(true);
+      setIsFeedbackModalOpen(false);
+      setFeedbackMessage('');
+      success('Sua avaliação foi enviada com sucesso para nossa equipe executiva!', 'Obrigado pelo Feedback ⭐');
+    } catch (err: any) {
+      error(err.message || 'Falha ao registrar feedback.', 'Erro');
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -440,6 +481,18 @@ export const EditorPage: React.FC = () => {
               </div>
             )}
           </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border pt-4">
+            <span>Dúvidas ou sugestões de novas IAs generativas?</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFeedbackModalOpen(true)}
+              leftIcon={<Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
+              className="text-amber-500 hover:text-amber-400"
+            >
+              Dar Feedback ⭐
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     );
@@ -504,6 +557,16 @@ export const EditorPage: React.FC = () => {
               </div>
             </DropdownMenuItem>
           </DropdownMenu>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFeedbackModalOpen(true)}
+            leftIcon={<Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
+            className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+          >
+            Dar Feedback ⭐
+          </Button>
 
           <Button
             variant="primary"
@@ -790,6 +853,132 @@ export const EditorPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Rodapé Discreto do Studio com Gatilho de Feedback */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-border/60 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-foreground/80">Photo Studio AI</span>
+          <span>•</span>
+          <span>Pipeline Generativo Ultrarrápido</span>
+          <span>•</span>
+          <span>Garantia de estorno em caso de falha de IA</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Tem alguma sugestão ou elogio?</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFeedbackModalOpen(true)}
+            leftIcon={<Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
+            className="text-amber-500 hover:text-amber-400 font-medium"
+          >
+            Dar Feedback ⭐
+          </Button>
+        </div>
+      </div>
+
+      {/* Modal de Avaliação & Feedback do Assinante */}
+      <Modal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        title="O que você achou da experiência no Studio?"
+        description="Sua avaliação ajuda a aprimorar nossos modelos generativos e chega diretamente ao painel executivo."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setIsFeedbackModalOpen(false)}>
+              Mais tarde
+            </Button>
+            <Button
+              variant="gold"
+              onClick={handleSubmitFeedback}
+              isLoading={isSubmittingFeedback}
+              loadingText="Enviando..."
+              leftIcon={<Star className="h-4 w-4 fill-current" />}
+            >
+              Enviar Avaliação
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          {/* Estrelas 1 a 5 */}
+          <div className="text-center space-y-2">
+            <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+              Nota da Experiência
+            </label>
+            <div className="flex items-center justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  className="p-1 rounded-lg transition-transform hover:scale-125 focus:outline-none"
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => setFeedbackRating(star)}
+                >
+                  <Star
+                    className={`h-7 w-7 transition-colors ${
+                      star <= (hoverRating || feedbackRating)
+                        ? 'text-amber-400 fill-amber-400'
+                        : 'text-muted-foreground/30 hover:text-amber-400/50'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground font-medium">
+              {feedbackRating === 5 && '⭐ Excelente! Qualidade impecável.'}
+              {feedbackRating === 4 && '👍 Muito bom! Pequenos detalhes a ajustar.'}
+              {feedbackRating === 3 && '👌 Razoável, pode melhorar.'}
+              {feedbackRating === 2 && '👎 Não atendeu às expectativas.'}
+              {feedbackRating === 1 && '⚠️ Ruim / Apresentou falha.'}
+            </p>
+          </div>
+
+          {/* Categoria do Feedback */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-foreground">
+              Categoria
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { id: 'qualidade_ia', label: 'Qualidade da IA' },
+                { id: 'velocidade', label: 'Velocidade / Latência' },
+                { id: 'sugestao', label: 'Sugestão de Recurso' },
+                { id: 'bug', label: 'Problema / Falha' },
+                { id: 'geral', label: 'Geral / Outros' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setFeedbackCategory(cat.id as any)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium border text-left transition-colors ${
+                    feedbackCategory === cat.id
+                      ? 'bg-primary/10 border-primary text-primary dark:text-primary-foreground dark:bg-primary/20'
+                      : 'bg-card border-border text-muted-foreground hover:border-primary/50'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Comentário */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-foreground">
+              Seu comentário ou sugestão
+            </label>
+            <Textarea
+              value={feedbackMessage}
+              onChange={(e) => setFeedbackMessage(e.target.value)}
+              placeholder="O que achou do recorte, nitidez ou iluminação? Há alguma ferramenta que gostaria de ver no Studio?"
+              rows={4}
+              className="text-xs"
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal de Confirmação & Cotação de Créditos */}
       {quoteData && (
