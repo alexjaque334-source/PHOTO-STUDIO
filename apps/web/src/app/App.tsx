@@ -63,12 +63,6 @@ const AppShellLayout: React.FC = () => {
       active: location.pathname === '/dashboard',
     },
     {
-      label: 'Studio de Edição',
-      href: '/studio',
-      icon: <Sparkles className="h-4 w-4" />,
-      active: location.pathname.startsWith('/studio'),
-    },
-    {
       label: 'Biblioteca',
       href: '/library',
       icon: <ImageIcon className="h-4 w-4" />,

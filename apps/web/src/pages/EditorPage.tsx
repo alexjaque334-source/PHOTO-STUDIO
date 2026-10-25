@@ -572,7 +572,7 @@ export const EditorPage: React.FC = () => {
             variant="primary"
             size="sm"
             leftIcon={<Upload className="h-4 w-4" />}
-            onClick={() => navigate('/studio')}
+            onClick={() => navigate('/dashboard')}
           >
             Nova Foto
           </Button>

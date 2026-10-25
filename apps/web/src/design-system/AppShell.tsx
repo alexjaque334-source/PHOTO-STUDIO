@@ -15,6 +15,8 @@ import {
   Coins,
   LogOut,
   Sliders,
+  LayoutDashboard,
+  User,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -59,10 +61,10 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   const defaultNavItems: NavItem[] = [
     {
-      label: 'Studio de Edição',
-      href: '/studio',
-      icon: <Sparkles className="h-4 w-4" />,
-      active: currentPath.startsWith('/studio'),
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: <LayoutDashboard className="h-4 w-4" />,
+      active: currentPath === '/dashboard',
     },
     {
       label: 'Biblioteca',
@@ -83,10 +85,10 @@ export const AppShell: React.FC<AppShellProps> = ({
       active: currentPath.startsWith('/pricing'),
     },
     {
-      label: 'Guia do Design System',
-      href: '/design',
-      icon: <Sliders className="h-4 w-4" />,
-      active: currentPath.startsWith('/design'),
+      label: 'Minha Conta',
+      href: '/account',
+      icon: <User className="h-4 w-4" />,
+      active: currentPath.startsWith('/account'),
     },
     ...(user?.isAdmin
       ? [
@@ -219,14 +221,11 @@ export const AppShell: React.FC<AppShellProps> = ({
 
           {/* Bloco de Retenção & Logout */}
           <div className="pt-4 border-t border-border/60 space-y-3">
-            <div className="p-3 rounded-xl bg-secondary/60 border border-border/50 text-[11px] space-y-1">
+            <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/50 text-[11px]">
               <span className="font-bold text-foreground flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Retenção Segura: 90 dias
               </span>
-              <p className="text-muted-foreground leading-normal">
-                Seus arquivos originais e gerados ficam disponíveis no R2 privado.
-              </p>
             </div>
 
             {onLogout && (

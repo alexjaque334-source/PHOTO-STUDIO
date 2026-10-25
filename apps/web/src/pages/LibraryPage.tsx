@@ -107,7 +107,7 @@ export const LibraryPage: React.FC = () => {
             variant="primary"
             size="sm"
             leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => navigate('/studio')}
+            onClick={() => navigate('/dashboard')}
           >
             Novo Upload
           </Button>
@@ -154,7 +154,7 @@ export const LibraryPage: React.FC = () => {
               : 'Faça upload de fotos para aplicar as 14 ferramentas de estúdio com inteligência artificial.'
           }
           action={
-            <Button variant="primary" onClick={() => navigate('/studio')}>
+            <Button variant="primary" onClick={() => navigate('/dashboard')}>
               Fazer Primeiro Upload
             </Button>
           }

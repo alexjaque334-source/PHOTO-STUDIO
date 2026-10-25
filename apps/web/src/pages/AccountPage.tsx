@@ -26,6 +26,7 @@ import {
 import {
   User as UserIcon,
   ShieldCheck,
+  ShieldAlert,
   Download,
   Trash2,
   KeyRound,
@@ -67,8 +68,7 @@ export const AccountPage: React.FC = () => {
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [isSettingUpMfa, setIsSettingUpMfa] = useState(false);
 
-  // Estados de Exportação e Exclusão
-  const [isExporting, setIsExporting] = useState(false);
+  // Estados de Exclusão
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
@@ -133,28 +133,6 @@ export const AccountPage: React.FC = () => {
     }
   };
 
-  const handleExportData = async () => {
-    setIsExporting(true);
-    try {
-      const data = await api.account.exportData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dados_pessoais_photostudio_${user?.id || 'titular'}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-      success('Arquivo JSON com todos os dados pessoais do titular gerado.', 'Exportação LGPD');
-    } catch (err: any) {
-      error(err.message || 'Falha ao exportar dados da conta.', 'Erro na Exportação');
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const handleRevokeSession = async (sessionId: string) => {
     try {
@@ -232,6 +210,35 @@ export const AccountPage: React.FC = () => {
         description="Gerencie seus dados de acesso, sessões ativas e exerça seus direitos de titularidade de dados."
         badge={<Badge variant="secondary">Titular Protegido</Badge>}
       />
+
+      {/* Lembrete de Segurança MFA em Faixa Amarela */}
+      {!user?.mfaEnabled && (
+        <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="font-bold text-sm text-foreground block">
+                Ative a Segurança em Dois Fatores (2FA / MFA)
+              </span>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Proteja sua conta, suas fotos originais e seus créditos contra acessos não autorizados.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleStartMfaSetup}
+            isLoading={isSettingUpMfa}
+            className="bg-amber-600 hover:bg-amber-700 text-white border-none shrink-0"
+            leftIcon={<ShieldCheck className="h-4 w-4" />}
+          >
+            Configurar 2FA Agora
+          </Button>
+        </div>
+      )}
 
       {/* Perfil Básico */}
       <Card>
@@ -430,28 +437,6 @@ export const AccountPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Exportação Completa */}
-          <div className="p-4 rounded-xl bg-secondary/50 border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="font-semibold text-xs text-foreground block">
-                Exportar Todos os Dados Pessoais
-              </span>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Gere um arquivo estruturado JSON com histórico de transações, consentimentos registrados e metadados de imagens.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportData}
-              isLoading={isExporting}
-              loadingText="Exportando..."
-              leftIcon={<Download className="h-4 w-4" />}
-            >
-              Exportar Meus Dados
-            </Button>
-          </div>
-
           {/* Histórico de Consentimentos */}
           <div className="p-4 rounded-xl bg-secondary/30 border border-border/80 space-y-2">
             <span className="font-semibold text-xs text-foreground block">

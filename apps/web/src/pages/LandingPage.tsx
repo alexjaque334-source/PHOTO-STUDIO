@@ -199,7 +199,7 @@ export const LandingPage: React.FC = () => {
                 variant="gold"
                 size="lg"
                 leftIcon={<Camera className="h-5 w-5" />}
-                onClick={() => navigate(isAuthenticated ? '/studio' : '/auth/register')}
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth/register')}
                 className="shadow-lg shadow-amber-500/10 font-bold"
               >
                 Experimentar no Studio
