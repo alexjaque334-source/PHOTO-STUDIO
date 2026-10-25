@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   PageHeader,
   Button,
@@ -34,9 +34,10 @@ import {
   FileImage,
   Upload,
   Star,
-  Flame,
   Wand2,
-  HelpCircle,
+  Mic,
+  MicOff,
+  Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -45,17 +46,16 @@ import {
   ImageVersion,
   JobSummary,
   EditQuoteResponse,
-  DetectedCommandSummary,
 } from '@/lib/api-client';
 import { generateThumbnail, convertAndDownload, ExportFormat } from '@/lib/image-utils';
 
 // Frases de inspiração populares em linguagem natural (Português Brasileiro)
 const INSPIRATION_CHIPS = [
-  { label: '✨ Me bota flutuando sem gravidade', prompt: 'Quero ficar flutuando no ar sem gravidade, estilo astronauta no espaço' },
-  { label: '🔥 Corpo com fogo cinematográfico', prompt: 'Meu corpo pegando fogo com chamas reais e iluminação de cinema' },
+  { label: '✨ Retrato profissional de estúdio', prompt: 'Transforme num retrato de estúdio com iluminação suave e acabamento editorial' },
+  { label: '🔥 Corpo com chamas de cinema', prompt: 'Meu corpo pegando fogo com chamas reais e iluminação de cinema' },
   { label: '👔 Ensaio executivo pro LinkedIn', prompt: 'Deixa minha foto com cara de estúdio profissional executivo para o LinkedIn' },
   { label: '🎂 Aniversário com balões e confetes', prompt: 'Cenário de festa de aniversário com balões dourados, bolo e confetes' },
-  { label: '🏖️ Fundo de praia no pôr do sol', prompt: 'Muda o fundo para uma praia paradisíaca no pôr do sol dourado' },
+  { label: '🏖️ Praia paradisíaca no pôr do sol', prompt: 'Muda o fundo para uma praia paradisíaca no pôr do sol dourado' },
   { label: '👰 Ensaio de casamento romântico', prompt: 'Transforme num ensaio romântico de casamento com flores e iluminação suave' },
   { label: '👥 Tirar pessoas do fundo', prompt: 'Remove todas as pessoas e pedestres indesejados que estão atrás de mim' },
   { label: '📦 Foto profissional de produto', prompt: 'Apresenta este produto num pedestal minimalista com luz de catálogo comercial' },
@@ -66,6 +66,7 @@ const INSPIRATION_CHIPS = [
 export const EditorPage: React.FC = () => {
   const { imageId } = useParams<{ imageId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { walletBalance, refreshWallet } = useAuth();
   const { success, error, info } = useToast();
 
@@ -85,6 +86,11 @@ export const EditorPage: React.FC = () => {
     suggestedCredits: number;
     priceInCents: number;
   } | null>(null);
+
+  // Estados de Áudio e Sugestões Inteligentes
+  const [isListening, setIsListening] = useState(false);
+  const [showIdeas, setShowIdeas] = useState(false);
+  const speechRecognitionRef = useRef<any>(null);
 
   // Estados de Cotação e Execução de Job
   const [quoteData, setQuoteData] = useState<EditQuoteResponse | null>(null);
@@ -109,6 +115,15 @@ export const EditorPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<any>(null);
+
+  // Preencher prompt vindo da câmera rápida do Dashboard (via URL query ?prompt=...)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const initialPrompt = searchParams.get('prompt');
+    if (initialPrompt && !naturalPrompt) {
+      setNaturalPrompt(decodeURIComponent(initialPrompt));
+    }
+  }, [location.search]);
 
   // Carregar dados da imagem
   const loadImageData = async (id: string, selectVersionId?: string) => {
@@ -150,7 +165,7 @@ export const EditorPage: React.FC = () => {
     }
   }, [imageId]);
 
-  // Interpretação em tempo real da linguagem natural enquanto o usuário digita
+  // Interpretação em tempo real da linguagem natural enquanto o usuário digita ou fala
   useEffect(() => {
     if (!naturalPrompt.trim() || naturalPrompt.trim().length < 4) {
       setLiveInterpretation(null);
@@ -213,12 +228,68 @@ export const EditorPage: React.FC = () => {
     }
   };
 
+  // Reconhecimento de Voz (Microfone estilo WhatsApp)
+  const handleToggleVoice = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      info(
+        'Reconhecimento de voz não suportado neste navegador. Você pode digitar sua ideia!',
+        'Aviso de Voz'
+      );
+      return;
+    }
+
+    if (isListening) {
+      speechRecognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      speechRecognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          setNaturalPrompt(transcript);
+        }
+      };
+
+      recognition.onerror = (e: any) => {
+        console.warn('Erro de áudio:', e.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.warn('Falha ao iniciar microfone:', err);
+      setIsListening(false);
+    }
+  };
+
   // Solicitar Cotação
   const handleRequestQuote = async () => {
     if (!image || !activeVersionId) return;
 
     if (!naturalPrompt.trim()) {
-      error('Escreva o que você deseja mudar na foto.', 'Texto em branco');
+      error('Escreva ou fale o que você deseja mudar na foto.', 'Texto em branco');
       return;
     }
 
@@ -354,7 +425,7 @@ export const EditorPage: React.FC = () => {
       <div className="max-w-3xl mx-auto space-y-8 pb-12">
         <PageHeader
           title="Transforme Qualquer Foto com Inteligência Artificial"
-          description="Você só precisa enviar sua foto e escrever em português o que quer mudar. Nossa IA cuida de todo o resto!"
+          description="Você só precisa enviar sua foto e escrever ou falar o que quer mudar. Nossa IA cuida de todo o resto!"
           badge={<Badge variant="gold">Motor Inteligente 70 Comandos</Badge>}
         />
 
@@ -423,6 +494,7 @@ export const EditorPage: React.FC = () => {
                 leftIcon={<Download className="h-4 w-4" />}
                 isLoading={isDownloading}
                 loadingText="Baixando..."
+                className="h-10 text-xs font-semibold"
               >
                 Baixar Foto
               </Button>
@@ -453,7 +525,7 @@ export const EditorPage: React.FC = () => {
             size="sm"
             onClick={() => setIsFeedbackModalOpen(true)}
             leftIcon={<Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
-            className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+            className="text-muted-foreground hover:text-foreground hidden sm:inline-flex h-10"
           >
             Avaliar ⭐
           </Button>
@@ -461,17 +533,18 @@ export const EditorPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<Upload className="h-4 w-4" />}
+            leftIcon={<Camera className="h-4 w-4" />}
             onClick={() => navigate('/dashboard')}
+            className="h-10 text-xs font-semibold"
           >
-            Outra Foto
+            Nova Foto
           </Button>
         </div>
       </div>
 
       {/* Grid Principal: Entrada Natural à Esquerda + Visualizador Antes/Depois à Direita */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* PAINEL ESQUERDO: Entrada em Linguagem Natural (5 Colunas) */}
+        {/* PAINEL ESQUERDO: Entrada em Linguagem Natural com Microfone WhatsApp (5 Colunas) */}
         <div className="lg:col-span-5 space-y-6">
           <Card className="border-border shadow-md">
             <CardHeader className="pb-3">
@@ -485,42 +558,76 @@ export const EditorPage: React.FC = () => {
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs">
-                Pode escrever do seu jeito, com palavras simples ou gírias. Nossa inteligência artificial entende e cuida de tudo!
+                Fale pelo microfone ou escreva do seu jeito. Nossa inteligência artificial entende e cuida de tudo!
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Campo de Linguagem Natural */}
+              {/* Campo de Texto com Microfone Estilo WhatsApp Integrado */}
               <div className="space-y-2">
-                <Textarea
-                  placeholder="Conte o que você quer mudar na foto. Pode escrever do seu jeito! (Ex: 'Me coloca flutuando em gravidade zero', 'Tira as pessoas do fundo e melhora a iluminação', 'Ensaio profissional de casamento')..."
-                  value={naturalPrompt}
-                  onChange={(e) => setNaturalPrompt(e.target.value)}
-                  showCharCount
-                  maxCharacters={2000}
-                  rows={4}
-                  className="text-sm font-normal"
-                />
+                <div className="relative">
+                  <Textarea
+                    placeholder="Conte o que você quer mudar na foto ou toque no microfone verde para falar..."
+                    value={naturalPrompt}
+                    onChange={(e) => setNaturalPrompt(e.target.value)}
+                    showCharCount
+                    maxCharacters={2000}
+                    rows={4}
+                    className="text-sm font-normal pr-14"
+                  />
+
+                  {/* Botão de Microfone de Voz Estilo WhatsApp (44px) */}
+                  <button
+                    type="button"
+                    onClick={handleToggleVoice}
+                    className={`absolute right-2.5 bottom-8 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90 ${
+                      isListening
+                        ? 'bg-red-600 text-white animate-pulse'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                    title={isListening ? 'Parar gravação' : 'Falar pelo microfone'}
+                  >
+                    {isListening ? (
+                      <MicOff className="h-5 w-5" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+
+                {isListening && (
+                  <p className="text-xs text-red-500 font-semibold flex items-center gap-1.5 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    Ouvindo sua voz... Fale o que quer mudar na foto!
+                  </p>
+                )}
               </div>
 
-              {/* Inspirações Rápidas em Português */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-amber-500" />
-                  Inspirações rápidas (clique para preencher):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {INSPIRATION_CHIPS.map((chip, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setNaturalPrompt(chip.prompt)}
-                      className="px-2.5 py-1 rounded-full bg-secondary/80 border border-border text-[11px] text-foreground/80 hover:text-foreground hover:bg-secondary hover:border-amber-500/50 transition-all text-left"
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Botão Discreto "Me dê ideias para esta foto" */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowIdeas(!showIdeas)}
+                  className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5"
+                >
+                  <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                  {showIdeas ? 'Ocultar ideias' : '💡 Me dê ideias para esta foto'}
+                </button>
+
+                {showIdeas && (
+                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-secondary/50 border border-border/60 animate-in fade-in">
+                    {INSPIRATION_CHIPS.map((chip, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setNaturalPrompt(chip.prompt)}
+                        className="px-2.5 py-1 rounded-full bg-background border border-border text-[11px] text-foreground/90 hover:border-amber-500/50 hover:bg-amber-500/10 transition-colors text-left"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Preview da Interpretação em Tempo Real */}
@@ -556,8 +663,9 @@ export const EditorPage: React.FC = () => {
                 onClick={handleRequestQuote}
                 isLoading={isQuoting}
                 loadingText="Analisando solicitação..."
-                leftIcon={<Sparkles className="h-4 w-4" />}
+                leftIcon={<Sparkles className="h-5 w-5" />}
                 disabled={isProcessing || !naturalPrompt.trim()}
+                className="h-13 text-sm font-bold shadow-lg"
               >
                 Transformar Foto com IA
               </Button>
@@ -578,7 +686,7 @@ export const EditorPage: React.FC = () => {
               Garantia de Satisfação Total
             </span>
             <p className="leading-relaxed">
-              Sua foto original nunca é perdida. Cada transformação gera uma nova versão para você comparar. Se o resultado não for o esperado, você pode pedir novas modificações facilmente!
+              Sua foto original nunca é perdida. Cada transformação gera uma nova versão para você comparar. Se o resultado não for o esperado, seus créditos são liberados!
             </p>
           </div>
         </div>
@@ -817,6 +925,7 @@ export const EditorPage: React.FC = () => {
                 onClick={handleConfirmEdit}
                 leftIcon={<Sparkles className="h-4 w-4" />}
                 disabled={(quoteData.balance?.available ?? 0) < quoteData.credits}
+                className="h-11 px-5 font-bold"
               >
                 Confirmar ({quoteData.credits} {quoteData.credits === 1 ? 'Crédito' : 'Créditos'})
               </Button>
