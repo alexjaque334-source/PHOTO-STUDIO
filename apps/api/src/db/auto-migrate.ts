@@ -42,9 +42,10 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
       .first<{ name: string }>();
 
+    const statements = cleanAndSplitSql(INITIAL_SCHEMA_SQL);
+
     if (!existing) {
       console.log('[AutoMigrate] Banco D1 virgem detectado. Executando schema e sementes iniciais...');
-      const statements = cleanAndSplitSql(INITIAL_SCHEMA_SQL);
       for (const stmt of statements) {
         try {
           await db.prepare(stmt).run();
@@ -53,6 +54,18 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
         }
       }
       console.log('[AutoMigrate] Tabelas principais e sementes criadas com sucesso!');
+    } else {
+      // Garante criação idempotente de todas as tabelas em bancos existentes
+      for (const stmt of statements) {
+        if (/^CREATE TABLE/i.test(stmt)) {
+          const safeStmt = stmt.replace(/^CREATE TABLE\s+(?!IF NOT EXISTS\s+)/i, 'CREATE TABLE IF NOT EXISTS ');
+          try {
+            await db.prepare(safeStmt).run();
+          } catch {
+            // ignora se tabela já existe
+          }
+        }
+      }
     }
 
     // Garante que a tabela de fallback de mídia no D1 existe
@@ -64,6 +77,44 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
             bytes BLOB NOT NULL,
             mime TEXT NOT NULL,
             size_bytes INTEGER NOT NULL,
+            created_at TEXT NOT NULL
+          )`,
+        )
+        .run();
+    } catch {
+      // ignora
+    }
+
+    // Garante tabela openrouter_usage
+    try {
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS openrouter_usage (
+            id TEXT PRIMARY KEY,
+            job_id TEXT,
+            model_id TEXT NOT NULL,
+            cost_usd_micros INTEGER NOT NULL DEFAULT 0,
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            created_at TEXT NOT NULL
+          )`,
+        )
+        .run();
+    } catch {
+      // ignora
+    }
+
+    // Garante tabela asaas_payments
+    try {
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS asaas_payments (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            asaas_id TEXT UNIQUE,
+            status TEXT NOT NULL,
+            value_cents INTEGER NOT NULL DEFAULT 0,
+            billing_type TEXT,
             created_at TEXT NOT NULL
           )`,
         )

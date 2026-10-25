@@ -53,32 +53,52 @@ adminRoutes.get('/metrics', async (c) => {
   );
 
   // 2. Total de usuários pagantes (que tiveram ao menos 1 pagamento recebido)
-  const payingUsers = await queryOne<{ total: number }>(
-    c.env.DB,
-    `SELECT COUNT(DISTINCT user_id) as total FROM asaas_payments
-     WHERE status IN ('RECEIVED', 'CONFIRMED')`,
-  );
+  let payingUsersTotal = 0;
+  try {
+    const payingUsers = await queryOne<{ total: number }>(
+      c.env.DB,
+      `SELECT COUNT(DISTINCT user_id) as total FROM asaas_payments
+       WHERE status IN ('RECEIVED', 'CONFIRMED')`,
+    );
+    payingUsersTotal = payingUsers?.total ?? 0;
+  } catch {
+    payingUsersTotal = 0;
+  }
 
   // 3. Receita bruta confirmada no período (centavos)
-  const revenueResult = await queryOne<{ totalCents: number }>(
-    c.env.DB,
-    `SELECT COALESCE(SUM(value_cents), 0) as totalCents FROM asaas_payments
-     WHERE status IN ('RECEIVED', 'CONFIRMED') AND created_at >= ? AND created_at <= ?`,
-    [from, to],
-  );
+  let revenueCents = 0;
+  try {
+    const revenueResult = await queryOne<{ totalCents: number }>(
+      c.env.DB,
+      `SELECT COALESCE(SUM(value_cents), 0) as totalCents FROM asaas_payments
+       WHERE status IN ('RECEIVED', 'CONFIRMED') AND created_at >= ? AND created_at <= ?`,
+      [from, to],
+    );
+    revenueCents = revenueResult?.totalCents ?? 0;
+  } catch {
+    revenueCents = 0;
+  }
 
   // 4. Custos de IA em dólares no período (openrouter_usage)
-  const aiCostResult = await queryOne<{ totalCostUsdMicros: number; totalJobs: number }>(
-    c.env.DB,
-    `SELECT COALESCE(SUM(cost_usd_micros), 0) as totalCostUsdMicros,
-            COUNT(id) as totalJobs
-     FROM openrouter_usage
-     WHERE created_at >= ? AND created_at <= ?`,
-    [from, to],
-  );
+  let aiCostUsdMicros = 0;
+  let totalJobs = 0;
+  try {
+    const aiCostResult = await queryOne<{ totalCostUsdMicros: number; totalJobs: number }>(
+      c.env.DB,
+      `SELECT COALESCE(SUM(cost_usd_micros), 0) as totalCostUsdMicros,
+              COUNT(id) as totalJobs
+       FROM openrouter_usage
+       WHERE created_at >= ? AND created_at <= ?`,
+      [from, to],
+    );
+    aiCostUsdMicros = aiCostResult?.totalCostUsdMicros ?? 0;
+    totalJobs = aiCostResult?.totalJobs ?? 0;
+  } catch {
+    aiCostUsdMicros = 0;
+    totalJobs = 0;
+  }
 
-  const revenueCents = revenueResult?.totalCents ?? 0;
-  const aiCostUsd = (aiCostResult?.totalCostUsdMicros ?? 0) / 1_000_000;
+  const aiCostUsd = aiCostUsdMicros / 1_000_000;
   // Cotação estimada USD/BRL = 5.50 para conversão de margem
   const aiCostBrlCents = Math.round(aiCostUsd * 5.5 * 100);
   const contributionMarginBrlCents = revenueCents - aiCostBrlCents;
@@ -100,7 +120,7 @@ adminRoutes.get('/metrics', async (c) => {
     period: { from, to },
     users: {
       active: activeUsers?.total ?? 0,
-      paying: payingUsers?.total ?? 0,
+      paying: payingUsersTotal,
     },
     financial: {
       revenueCents,
@@ -109,7 +129,7 @@ adminRoutes.get('/metrics', async (c) => {
       contributionMarginBrlCents,
     },
     aiUsage: {
-      totalGenerations: aiCostResult?.totalJobs ?? 0,
+      totalGenerations: totalJobs,
     },
     storage: {
       activeImages: activeImages?.total ?? 0,
@@ -151,6 +171,7 @@ adminRoutes.get('/users', async (c) => {
     whereClause: whereParts.join(' AND '),
     params,
     sortColumn: 'u.created_at',
+    idColumn: 'u.id',
     order: 'DESC',
     cursor,
     limit,
@@ -560,29 +581,38 @@ adminRoutes.put('/feedbacks/:id/status', async (c) => {
 adminRoutes.get('/ai/queue-monitor', async (c) => {
   const db = c.env.DB;
 
-  const [queueMetrics, errorCount, activeWorkers] = await Promise.all([
-    db
-      .prepare(
-        `SELECT 
-          COUNT(id) as totalJobsToday,
-          SUM(CASE WHEN cost_usd_micros > 0 THEN 1 ELSE 0 END) as successfulJobs,
-          AVG(cost_usd_micros) as avgCostMicros
-         FROM openrouter_usage
-         WHERE created_at >= date('now', 'start of day')`,
-      )
-      .first<{ totalJobsToday: number; successfulJobs: number; avgCostMicros: number }>(),
-    db
-      .prepare(
-        `SELECT COUNT(id) as failedCount 
-         FROM openrouter_usage 
-         WHERE cost_usd_micros = 0 AND created_at >= date('now', 'start of day')`,
-      )
-      .first<{ failedCount: number }>(),
-    2, // Instâncias ativas do Worker / Cloudflare Queues
-  ]);
+  let total = 0;
+  let failed = 0;
 
-  const total = queueMetrics?.totalJobsToday ?? 0;
-  const failed = errorCount?.failedCount ?? 0;
+  try {
+    const [queueMetrics, errorCount] = await Promise.all([
+      db
+        .prepare(
+          `SELECT 
+            COUNT(id) as totalJobsToday,
+            SUM(CASE WHEN cost_usd_micros > 0 THEN 1 ELSE 0 END) as successfulJobs,
+            AVG(cost_usd_micros) as avgCostMicros
+           FROM openrouter_usage
+           WHERE created_at >= date('now', 'start of day')`,
+        )
+        .first<{ totalJobsToday: number; successfulJobs: number; avgCostMicros: number }>(),
+      db
+        .prepare(
+          `SELECT COUNT(id) as failedCount 
+           FROM openrouter_usage 
+           WHERE cost_usd_micros = 0 AND created_at >= date('now', 'start of day')`,
+        )
+        .first<{ failedCount: number }>(),
+    ]);
+
+    total = queueMetrics?.totalJobsToday ?? 0;
+    failed = errorCount?.failedCount ?? 0;
+  } catch {
+    total = 0;
+    failed = 0;
+  }
+
+  const activeWorkers = 2; // Instâncias ativas do Worker / Cloudflare Queues
   const successRate = total > 0 ? Number((((total - failed) / total) * 100).toFixed(1)) : 99.8;
 
   return c.json({

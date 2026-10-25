@@ -50,7 +50,8 @@ export const WalletPage: React.FC = () => {
       const res = await api.wallet.listTransactions(undefined, 50);
       setTransactions(res.items || []);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Falha ao sincronizar extrato de créditos.');
+      console.warn('Falha ao sincronizar extrato de créditos:', err);
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }

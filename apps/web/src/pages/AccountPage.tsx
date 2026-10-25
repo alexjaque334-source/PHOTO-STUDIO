@@ -104,9 +104,16 @@ export const AccountPage: React.FC = () => {
     // Consentimentos
     api.account
       .getConsents()
-      .then((res) => {
+      .then((res: any) => {
         if (!isMounted) return;
-        setConsents(res || []);
+        if (Array.isArray(res)) {
+          setConsents(res);
+        } else if (res?.terms) {
+          setConsents([
+            { consentType: 'Termos de Uso', version: res.terms.version, acceptedAt: res.terms.acceptedAt || '' },
+            { consentType: 'Política de Privacidade', version: res.privacy.version, acceptedAt: res.privacy.acceptedAt || '' },
+          ]);
+        }
       })
       .catch(() => {});
 

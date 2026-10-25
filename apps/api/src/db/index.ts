@@ -79,6 +79,7 @@ export interface PaginateOptions {
   whereClause?: string;
   params?: unknown[];
   sortColumn?: string;
+  idColumn?: string;
   order?: 'ASC' | 'DESC';
   cursor?: string | null;
   limit?: number;
@@ -92,6 +93,7 @@ export interface PaginatedResult<T> {
 /**
  * Paginação segura baseada em cursor para tabelas D1.
  * Garante ordenação estável e previne duplicação com cursor composto (sortColumn, id).
+ * Desambigua explicitamente a coluna de id para consultas com JOINs.
  */
 export async function paginate<T extends { id: string }>(
   db: D1Database,
@@ -103,6 +105,7 @@ export async function paginate<T extends { id: string }>(
     whereClause = '1=1',
     params = [],
     sortColumn = 'created_at',
+    idColumn,
     order = 'DESC',
     cursor = null,
     limit = 20,
@@ -112,15 +115,19 @@ export async function paginate<T extends { id: string }>(
   const queryParams = [...params];
   let cursorCondition = '';
 
+  // Determina coluna de ID qualificada para evitar erro de ambiguidade em JOINs
+  const resolvedIdColumn =
+    idColumn || (sortColumn.includes('.') ? `${sortColumn.split('.')[0]}.id` : 'id');
+
   if (cursor) {
     const decoded = decodeCursor(cursor);
     if (decoded) {
       const op = order === 'DESC' ? '<' : '>';
-      if (sortColumn === 'id') {
-        cursorCondition = ` AND id ${op} ?`;
+      if (sortColumn === 'id' || sortColumn === resolvedIdColumn) {
+        cursorCondition = ` AND ${resolvedIdColumn} ${op} ?`;
         queryParams.push(decoded.id);
       } else {
-        cursorCondition = ` AND (${sortColumn} ${op} ? OR (${sortColumn} = ? AND id ${op} ?))`;
+        cursorCondition = ` AND (${sortColumn} ${op} OR (${sortColumn} = ? AND ${resolvedIdColumn} ${op} ?))`;
         queryParams.push(decoded.sortValue ?? '', decoded.sortValue ?? '', decoded.id);
       }
     }
@@ -130,7 +137,7 @@ export async function paginate<T extends { id: string }>(
   const sql = `
     SELECT ${select} FROM ${table}
     WHERE ${whereClause} ${cursorCondition}
-    ORDER BY ${sortColumn} ${order}, id ${order}
+    ORDER BY ${sortColumn} ${order}, ${resolvedIdColumn} ${order}
     LIMIT ${safeLimit + 1}
   `;
 
@@ -140,9 +147,10 @@ export async function paginate<T extends { id: string }>(
   if (rows.length > safeLimit) {
     const lastItem = rows[safeLimit - 1];
     if (lastItem) {
+      const sortKey = sortColumn.includes('.') ? sortColumn.split('.')[1]! : sortColumn;
       nextCursor = encodeCursor({
         id: lastItem.id,
-        sortValue: ((lastItem as Record<string, unknown>)[sortColumn] as string | number | null) ?? null,
+        sortValue: ((lastItem as Record<string, unknown>)[sortKey] as string | number | null) ?? null,
       });
     }
     rows.splice(safeLimit);

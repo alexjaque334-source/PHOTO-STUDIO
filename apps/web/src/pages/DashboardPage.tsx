@@ -81,7 +81,8 @@ export const DashboardPage: React.FC = () => {
       })
       .catch((err) => {
         if (!isMounted) return;
-        setErrorMessage(err.message || 'Falha ao sincronizar criações recentes.');
+        console.warn('Sincronização de criações recentes no Dashboard:', err);
+        setImages([]);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);

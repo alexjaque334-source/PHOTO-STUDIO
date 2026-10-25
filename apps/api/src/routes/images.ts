@@ -241,6 +241,7 @@ imageRoutes.get('/', requireAuth(), async (c) => {
     whereClause: whereParts.map((p) => `i.${p}`).join(' AND '),
     params,
     sortColumn: `i.${sortColumn}`,
+    idColumn: 'i.id',
     order,
     cursor,
     limit,

@@ -57,7 +57,8 @@ export const LibraryPage: React.FC = () => {
       const res = await api.images.list({ sort: sortBy, limit: 50 });
       setImages(res.items || []);
     } catch (err: any) {
-      error(err.message || 'Falha ao buscar galeria de imagens.', 'Erro');
+      console.warn('Falha ao sincronizar galeria de imagens:', err);
+      setImages([]);
     } finally {
       setIsLoading(false);
     }
