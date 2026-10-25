@@ -29,7 +29,12 @@ const routesJson = {
 fs.writeFileSync(path.join(webDist, '_routes.json'), JSON.stringify(routesJson, null, 2));
 console.log('🗺️ [Build] _routes.json gerado com sucesso.');
 
-// 4. Copia apps/web/dist para dist na raiz para compatibilidade universal com Cloudflare Pages
+// 4. Cria .assetsignore para evitar que o Cloudflare Wrangler bloqueie o upload de assets com erro de _worker.js
+const assetsIgnoreContent = '_worker.js\n_routes.json\n';
+fs.writeFileSync(path.join(webDist, '.assetsignore'), assetsIgnoreContent);
+console.log('🛡️ [Build] .assetsignore criado com sucesso para o Cloudflare Wrangler.');
+
+// 5. Copia apps/web/dist para dist na raiz para compatibilidade universal com Cloudflare Pages
 console.log('📂 [Build] Sincronizando saída para dist/ na raiz...');
 if (fs.existsSync(rootDist)) {
   fs.rmSync(rootDist, { recursive: true, force: true });
