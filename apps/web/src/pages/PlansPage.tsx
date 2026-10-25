@@ -369,7 +369,7 @@ export const PlansPage: React.FC = () => {
                 isPopular={isPopular}
                 features={[
                   `${plan.monthlyCredits} créditos renovados a cada ciclo`,
-                  'Todas as 14 ferramentas de IA generativa',
+                  'Todos os 70 comandos inteligentes de IA',
                   'Prioridade na fila de renderização',
                   'Histórico não-destrutivo completo',
                   'Downloads de alta resolução (PNG, JPG, WebP)',

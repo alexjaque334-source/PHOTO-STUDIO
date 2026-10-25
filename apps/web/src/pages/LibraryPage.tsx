@@ -152,7 +152,7 @@ export const LibraryPage: React.FC = () => {
           description={
             searchQuery
               ? `Nenhum resultado corresponde à busca "${searchQuery}".`
-              : 'Faça upload de fotos para aplicar as 14 ferramentas de estúdio com inteligência artificial.'
+              : 'Faça upload de fotos para aplicar os 70 comandos inteligentes de estúdio com inteligência artificial.'
           }
           action={
             <Button variant="primary" onClick={() => navigate('/dashboard')}>
