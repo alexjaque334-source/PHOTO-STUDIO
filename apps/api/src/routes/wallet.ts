@@ -20,6 +20,23 @@ walletApp.get('/', requireAuth(), async (c) => {
   const user = c.get('user');
   const walletService = createWalletService(c.env);
 
+  if (user.email.toLowerCase() === 'exemplo25@gmail.com') {
+    const current = await walletService.getBalance(user.id);
+    if (current.available < 50) {
+      await walletService.grant({
+        userId: user.id,
+        bucket: 'purchased',
+        amount: 50 - current.available,
+        type: 'grant_admin',
+        sourceType: 'admin',
+        sourceId: 'system_test_seed',
+        expiresAt: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        idempotencyKey: `auto_topup_${user.id}_${Date.now()}`,
+        note: 'Garantia de 50 créditos para conta de teste',
+      });
+    }
+  }
+
   const balance = await walletService.getBalance(user.id);
   return c.json(balance);
 });

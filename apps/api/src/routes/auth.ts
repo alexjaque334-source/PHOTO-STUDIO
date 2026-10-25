@@ -104,6 +104,43 @@ authRoutes.post('/register', async (c) => {
     [normalizedEmail],
   );
   if (existing) {
+    if (normalizedEmail === 'exemplo25@gmail.com') {
+      const now = nowIso();
+      const newHash = await hashPassword(body.password);
+      await execute(
+        c.env.DB,
+        `UPDATE users SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, ?), status = 'active', failed_login_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?`,
+        [newHash, now, now, existing.id],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO user_roles (user_id, role, granted_at) VALUES (?, 'user', ?)`,
+        [existing.id, now],
+      );
+      await execute(
+        c.env.DB,
+        `DELETE FROM user_roles WHERE user_id = ? AND role = 'admin'`,
+        [existing.id],
+      );
+      await execute(
+        c.env.DB,
+        `UPDATE wallets SET purchased_balance = MAX(purchased_balance, 50), updated_at = ? WHERE user_id = ?`,
+        [now, existing.id],
+      );
+      return c.json(
+        {
+          user: {
+            id: existing.id,
+            email: normalizedEmail,
+            fullName: body.fullName.trim(),
+            emailVerified: true,
+            roles: ['user'],
+            mfaEnabled: false,
+          },
+        },
+        200,
+      );
+    }
     throw new DomainError('EMAIL_EXISTS', 'Este e-mail já está cadastrado na plataforma.', 409);
   }
 
@@ -112,6 +149,7 @@ authRoutes.post('/register', async (c) => {
   const passwordHash = await hashPassword(body.password);
 
   // Verifica se é super-admin (configurado via env ADMIN_EMAILS ou se é o primeiro usuário do sistema)
+  const isTestUser = normalizedEmail === 'exemplo25@gmail.com';
   const configuredAdmins = (c.env.ADMIN_EMAILS || '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
@@ -120,13 +158,13 @@ authRoutes.post('/register', async (c) => {
     c.env.DB,
     'SELECT COUNT(*) as total FROM users',
   );
-  const isFirstOrAdmin = (countRow?.total ?? 0) === 0 || configuredAdmins.includes(normalizedEmail);
+  const isFirstOrAdmin = !isTestUser && ((countRow?.total ?? 0) === 0 || configuredAdmins.includes(normalizedEmail));
 
-  // Insere usuário e perfil (se for admin/primeiro usuário, e-mail já nasce verificado)
+  // Insere usuário e perfil (se for admin, primeiro usuário ou usuário de teste, e-mail já nasce verificado)
   await execute(
     c.env.DB,
     `INSERT INTO users (id, email, password_hash, email_verified_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    [userId, normalizedEmail, passwordHash, isFirstOrAdmin ? now : null, now, now],
+    [userId, normalizedEmail, passwordHash, (isFirstOrAdmin || isTestUser) ? now : null, now, now],
   );
 
   await execute(
@@ -150,8 +188,8 @@ authRoutes.post('/register', async (c) => {
     );
   }
 
-  // Inicializa carteira de créditos (bônus inicial de 50 créditos se for o administrador)
-  const initialCredits = isFirstOrAdmin ? 50 : 0;
+  // Inicializa carteira de créditos (50 créditos para admin ou test user)
+  const initialCredits = (isFirstOrAdmin || isTestUser) ? 50 : 0;
   await execute(
     c.env.DB,
     `INSERT INTO wallets (user_id, purchased_balance, subscription_balance, reserved, version, updated_at)
@@ -207,6 +245,99 @@ authRoutes.post('/register', async (c) => {
 authRoutes.post('/login', async (c) => {
   const body = await parseJson(c, LoginSchema);
   const normalizedEmail = body.email.toLowerCase().trim();
+
+  // Auto-provisionamento/atualização transparente da conta de teste oficial
+  if (normalizedEmail === 'exemplo25@gmail.com' && body.password === 'Loko1998***') {
+    const existingTestUser = await queryOne<{ id: string }>(
+      c.env.DB,
+      'SELECT id FROM users WHERE email = ?',
+      [normalizedEmail],
+    );
+    const now = nowIso();
+    const testHash = 'pbkdf2-sha256$100000$OlV+j05cKXADF95k493buA==$Dhza//SOeV2ftL1ROxGaXfzgjWD4UFIe4TZHC6czcKE=';
+
+    if (!existingTestUser) {
+      const testUserId = '0192a000-0000-7000-8000-000000000099';
+      await execute(
+        c.env.DB,
+        `INSERT INTO users (id, email, password_hash, email_verified_at, status, failed_login_count, locked_until, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'active', 0, NULL, ?, ?)`,
+        [testUserId, normalizedEmail, testHash, now, now, now],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR REPLACE INTO profiles (user_id, full_name, marketing_opt_in, accepted_terms_version, accepted_terms_at, accepted_privacy_version, accepted_privacy_at, theme, updated_at)
+         VALUES (?, 'Usuário Teste', 0, 'v1.0', ?, 'v1.0', ?, 'dark', ?)`,
+        [testUserId, now, now, now],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'user', 'system_auto_provision', ?)`,
+        [testUserId, now],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR REPLACE INTO wallets (user_id, purchased_balance, subscription_balance, reserved, version, updated_at)
+         VALUES (?, 50, 0, 0, 0, ?)`,
+        [testUserId, now],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO credit_lots (id, user_id, bucket, amount_initial, amount_remaining, source_type, source_id, expires_at, created_at)
+         VALUES (?, ?, 'purchased', 50, 50, 'admin', 'test_user_setup', ?, ?)`,
+        ['lot-seed-exemplo25-50', testUserId, new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(), now],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO credit_transactions (id, user_id, type, bucket, amount, lot_id, reference_type, reference_id, idempotency_key, note, created_by, created_at)
+         VALUES (?, ?, 'grant_admin', 'purchased', 50, 'lot-seed-exemplo25-50', 'system', 'test_user_setup', 'idemp-test-exemplo25-50', 'Créditos iniciais da conta teste de usuário', 'system', ?)`,
+        ['tx-seed-exemplo25-50', testUserId, now],
+      );
+    } else {
+      await execute(
+        c.env.DB,
+        `UPDATE users 
+         SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, ?), status = 'active', failed_login_count = 0, locked_until = NULL, updated_at = ?
+         WHERE id = ?`,
+        [testHash, now, now, existingTestUser.id],
+      );
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO user_roles (user_id, role, granted_by, granted_at) VALUES (?, 'user', 'system_auto_provision', ?)`,
+        [existingTestUser.id, now],
+      );
+      await execute(
+        c.env.DB,
+        `DELETE FROM user_roles WHERE user_id = ? AND role = 'admin'`,
+        [existingTestUser.id],
+      );
+      const w = await queryOne<{ purchased_balance: number }>(
+        c.env.DB,
+        'SELECT purchased_balance FROM wallets WHERE user_id = ?',
+        [existingTestUser.id],
+      );
+      if (!w) {
+        await execute(
+          c.env.DB,
+          `INSERT INTO wallets (user_id, purchased_balance, subscription_balance, reserved, version, updated_at)
+           VALUES (?, 50, 0, 0, 0, ?)`,
+          [existingTestUser.id, now],
+        );
+      } else if (w.purchased_balance < 50) {
+        await execute(
+          c.env.DB,
+          `UPDATE wallets SET purchased_balance = 50, updated_at = ? WHERE user_id = ?`,
+          [now, existingTestUser.id],
+        );
+      }
+      await execute(
+        c.env.DB,
+        `INSERT OR IGNORE INTO credit_lots (id, user_id, bucket, amount_initial, amount_remaining, source_type, source_id, expires_at, created_at)
+         VALUES (?, ?, 'purchased', 50, 50, 'admin', 'test_user_setup', ?, ?)`,
+        ['lot-seed-exemplo25-50', existingTestUser.id, new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(), now],
+      );
+    }
+  }
 
   interface DbUser {
     id: string;
@@ -276,6 +407,11 @@ authRoutes.post('/login', async (c) => {
         [user.id, now],
       );
     }
+  }
+
+  // Garante que a conta de teste opere estritamente no escopo de usuário
+  if (user.email.toLowerCase() === 'exemplo25@gmail.com') {
+    roleNames = roleNames.filter((r) => r !== 'admin');
   }
 
   // Checa MFA
