@@ -144,6 +144,27 @@ export interface TierDescriptor {
   available: boolean;
 }
 
+export interface DetectedCommandSummary {
+  id: number;
+  name: string;
+  intent: string;
+  category: string;
+  complexity: string;
+  suggestedCredits?: number;
+}
+
+export interface InternalCommand {
+  id: number;
+  internalName: string;
+  intent: string;
+  userPhrases: string[];
+  technicalPrompt: string;
+  category: string;
+  complexity: 'baixa' | 'média' | 'alta';
+  suggestedCredits: number;
+  tags?: string[];
+}
+
 export interface EditQuoteResponse {
   editRequestId: string;
   credits: number;
@@ -151,6 +172,10 @@ export interface EditQuoteResponse {
   modelLabel: string;
   expiresAt: string;
   balance: WalletBalance;
+  priceInCents?: number;
+  humanFriendlySummary?: string;
+  primaryIntent?: string;
+  detectedIntents?: DetectedCommandSummary[];
 }
 
 export interface BillingProduct {
@@ -497,13 +522,46 @@ export const api = {
       imageId: string;
       versionId: string;
       prompt: string;
-      tool: EditTool;
-      tier: Tier;
+      tool?: EditTool;
+      tier?: Tier;
     }) {
       return request<EditQuoteResponse>('/api/edits/quote', {
         method: 'POST',
         body: JSON.stringify(input),
       });
+    },
+
+    async interpret(prompt: string) {
+      return request<{
+        interpretation: {
+          primaryIntent: string;
+          secondaryIntents: string[];
+          allDetectedCommands: string[];
+          elementsToPreserve: string[];
+          elementsToModify: string[];
+          restrictions: string[];
+          style: string;
+          complexity: string;
+          modelCompatibility: string;
+          suggestedCredits: number;
+          priceInCents: number;
+          confidence: number;
+          humanFriendlySummary: string;
+          consolidatedTechnicalPrompt: string;
+        };
+        detectedCommands: InternalCommand[];
+      }>('/api/edits/interpret', {
+        method: 'POST',
+        body: JSON.stringify({ prompt }),
+      });
+    },
+
+    async getCatalog() {
+      return request<{
+        total: number;
+        commands: InternalCommand[];
+        categories: string[];
+      }>('/api/edits/catalog');
     },
 
     async confirm(editRequestId: string) {

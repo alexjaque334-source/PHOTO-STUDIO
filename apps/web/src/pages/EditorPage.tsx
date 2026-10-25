@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   PageHeader,
   Button,
-  IconButton,
   Badge,
   Card,
   CardHeader,
@@ -20,167 +19,48 @@ import {
   Skeleton,
   DropdownMenu,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   useToast,
 } from '@/design-system';
 import {
   Sparkles,
-  Scissors,
-  Wand2,
   Download,
   Coins,
   History,
   ArrowLeft,
   CheckCircle2,
-  Layers,
   Camera,
-  RefreshCw,
+  RotateCcw,
   Sliders,
-  ChevronRight,
-  Eye,
   FileImage,
   Upload,
   Star,
+  Flame,
+  Wand2,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
   api,
-  EditTool,
-  Tier,
   ImageSummary,
   ImageVersion,
   JobSummary,
   EditQuoteResponse,
+  DetectedCommandSummary,
 } from '@/lib/api-client';
 import { generateThumbnail, convertAndDownload, ExportFormat } from '@/lib/image-utils';
 
-interface ToolItem {
-  id: EditTool;
-  label: string;
-  category: 'Fundo & Isolamento' | 'Qualidade & Restauração' | 'Comercial & Criativo';
-  description: string;
-  defaultPrompt: string;
-  suggestions: string[];
-}
-
-const TOOLS_CONFIG: ToolItem[] = [
-  // Categoria A: Fundo & Isolamento
-  {
-    id: 'remove_background',
-    label: 'Remover Fundo',
-    category: 'Fundo & Isolamento',
-    description: 'Recorte automático do assunto principal com bordas precisas.',
-    defaultPrompt: 'Remover o fundo da imagem mantendo o assunto perfeitamente isolado.',
-    suggestions: ['Isolar apenas a pessoa', 'Recortar produto com máscara suave', 'Manter cabelos naturais'],
-  },
-  {
-    id: 'transparent_background',
-    label: 'Fundo Transparente',
-    category: 'Fundo & Isolamento',
-    description: 'Gera canal alfa transparente puro sem serrilhado.',
-    defaultPrompt: 'Exportar imagem com fundo transparente em canal alfa puro.',
-    suggestions: ['Fundo PNG 100% transparente', 'Suavizar bordas com antialiasing'],
-  },
-  {
-    id: 'replace_background',
-    label: 'Substituir Fundo',
-    category: 'Fundo & Isolamento',
-    description: 'Substitui o fundo atual por um cenário personalizado.',
-    defaultPrompt: 'Substituir o fundo por um estúdio fotográfico minimalista em tons neutros de cinza com iluminação suave.',
-    suggestions: ['Fundo de estúdio executivo', 'Praia paradisíaca ao entardecer', 'Ambiente de loft urbano moderno'],
-  },
-  {
-    id: 'remove_people',
-    label: 'Remover Pessoas',
-    category: 'Fundo & Isolamento',
-    description: 'Elimina pedestres e pessoas indesejadas do fundo.',
-    defaultPrompt: 'Remover todas as pessoas e pedestres ao fundo mantendo o ambiente limpo.',
-    suggestions: ['Remover figurantes ao fundo', 'Manter apenas a pessoa central', 'Preencher espaço com o cenário natural'],
-  },
-  {
-    id: 'remove_objects',
-    label: 'Remover Objetos',
-    category: 'Fundo & Isolamento',
-    description: 'Inpainting inteligente de fios, placas, sombras ou manchas.',
-    defaultPrompt: 'Remover objetos estranhos, fios de postes e elementos de distração da cena.',
-    suggestions: ['Remover postes e fios elétricos', 'Apagar manchas e reflexos indesejados', 'Remover placa de trânsito'],
-  },
-
-  // Categoria B: Qualidade & Restauração
-  {
-    id: 'improve_lighting',
-    label: 'Melhorar Iluminação',
-    category: 'Qualidade & Restauração',
-    description: 'Equilíbrio profissional de sombras e luz tridimensional.',
-    defaultPrompt: 'Corrigir a iluminação com luz de estúdio suave, realçando volume facial e eliminando sombras duras.',
-    suggestions: ['Iluminação suave estilo softbox', 'Realce de luz de contorno dourada', 'Eliminar superexposição'],
-  },
-  {
-    id: 'improve_colors',
-    label: 'Aprimorar Cores',
-    category: 'Qualidade & Restauração',
-    description: 'Gradação cinematográfica e correção de balanço de branco.',
-    defaultPrompt: 'Realçar a saturação natural e corrigir o balanço de branco para tons quentes e vívidos de estúdio.',
-    suggestions: ['Tons quentes de pôr do sol', 'Gradação cinematográfica neutra', 'Balanço de branco preciso'],
-  },
-  {
-    id: 'sharpen',
-    label: 'Nitidez & Clareza',
-    category: 'Qualidade & Restauração',
-    description: 'Aprimora micro-detalhes, olhos, texturas e foco.',
-    defaultPrompt: 'Aumentar a nitidez óptica, revelando texturas finas e clareza nos olhos sem gerar ruído.',
-    suggestions: ['Nitidez ultra-alta nos olhos', 'Realce de textura de tecido', 'Correção de leve desfoque'],
-  },
-  {
-    id: 'restore_photo',
-    label: 'Restaurar Foto Antiga',
-    category: 'Qualidade & Restauração',
-    description: 'Recupera arranhões, manchas e desbotamento de fotos antigas.',
-    defaultPrompt: 'Restaurar foto antiga danificada, removendo vincos, arranhões e restaurando o contraste original.',
-    suggestions: ['Remover rachaduras e vincos', 'Colorir foto em preto e branco', 'Recuperar foto desbotada'],
-  },
-
-  // Categoria C: Comercial & Criativo
-  {
-    id: 'product_photo',
-    label: 'Foto de Produto (E-commerce)',
-    category: 'Comercial & Criativo',
-    description: 'Posiciona o produto sobre pedestal com iluminação comercial.',
-    defaultPrompt: 'Apresentar o produto em um pedestal cilíndrico minimalista com iluminação de estúdio comercial e reflexos elegantes.',
-    suggestions: ['Pedestal de mármore minimalista', 'Fundo de estúdio branco e-commerce', 'Cenário botânico com folhas sutis'],
-  },
-  {
-    id: 'add_elements',
-    label: 'Adicionar Elementos',
-    category: 'Comercial & Criativo',
-    description: 'Insere elementos ou efeitos visuais coerentes com a cena.',
-    defaultPrompt: 'Adicionar raios solares sutis (god rays) e partículas leves de poeira dourada flutuando.',
-    suggestions: ['Partículas de luz dourada', 'Flores delicadas em primeiro plano', 'Gotas de orvalho realistas'],
-  },
-  {
-    id: 'replace_elements',
-    label: 'Substituir Elementos',
-    category: 'Comercial & Criativo',
-    description: 'Substitui roupas, tecidos, texturas ou materiais.',
-    defaultPrompt: 'Substituir a roupa por um terno executivo moderno de alta costura em azul marinho.',
-    suggestions: ['Trocar roupa por terno azul marinho', 'Substituir fundo por estúdio de madeira', 'Alterar cor para preto fosco'],
-  },
-  {
-    id: 'variations',
-    label: 'Variações Criativas',
-    category: 'Comercial & Criativo',
-    description: 'Gera composições e ângulos alternativos mantendo o sujeito.',
-    defaultPrompt: 'Criar uma variação criativa do ângulo com iluminação dramática mantendo todos os traços do produto.',
-    suggestions: ['Ângulo levemente inclinado', 'Iluminação dramática chiaroscuro', 'Enquadramento fechado macro'],
-  },
-  {
-    id: 'free_prompt',
-    label: 'Prompt Livre com IA',
-    category: 'Comercial & Criativo',
-    description: 'Instrução em linguagem natural sem filtros pré-fixados.',
-    defaultPrompt: 'Descreva livremente o que deseja alterar ou adicionar na foto...',
-    suggestions: ['Transformar em pintura a óleo clássica', 'Estilo editorial de revista de moda', 'Cores no estilo Polaroid vintage'],
-  },
+// Frases de inspiração populares em linguagem natural (Português Brasileiro)
+const INSPIRATION_CHIPS = [
+  { label: '✨ Me bota flutuando sem gravidade', prompt: 'Quero ficar flutuando no ar sem gravidade, estilo astronauta no espaço' },
+  { label: '🔥 Corpo com fogo cinematográfico', prompt: 'Meu corpo pegando fogo com chamas reais e iluminação de cinema' },
+  { label: '👔 Ensaio executivo pro LinkedIn', prompt: 'Deixa minha foto com cara de estúdio profissional executivo para o LinkedIn' },
+  { label: '🎂 Aniversário com balões e confetes', prompt: 'Cenário de festa de aniversário com balões dourados, bolo e confetes' },
+  { label: '🏖️ Fundo de praia no pôr do sol', prompt: 'Muda o fundo para uma praia paradisíaca no pôr do sol dourado' },
+  { label: '👰 Ensaio de casamento romântico', prompt: 'Transforme num ensaio romântico de casamento com flores e iluminação suave' },
+  { label: '👥 Tirar pessoas do fundo', prompt: 'Remove todas as pessoas e pedestres indesejados que estão atrás de mim' },
+  { label: '📦 Foto profissional de produto', prompt: 'Apresenta este produto num pedestal minimalista com luz de catálogo comercial' },
+  { label: '💎 Nitidez ultra alta e pele perfeita', prompt: 'Aumenta a nitidez nos olhos e remove imperfeições da pele naturalmente' },
+  { label: '🏎️ Ensaio de piloto de corrida', prompt: 'Me coloca como piloto de Fórmula 1 no grid de largada' },
 ];
 
 export const EditorPage: React.FC = () => {
@@ -197,10 +77,14 @@ export const EditorPage: React.FC = () => {
   const [originalVersionUrl, setOriginalVersionUrl] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(false);
 
-  // Estados de Configuração da Edição
-  const [selectedTool, setSelectedTool] = useState<EditTool>('remove_background');
-  const [promptText, setPromptText] = useState<string>(TOOLS_CONFIG[0].defaultPrompt);
-  const [selectedTier, setSelectedTier] = useState<Tier>('padrao');
+  // Entrada em Linguagem Natural do Usuário (REGRA ABSOLUTA: sem seleção de comandos técnicos)
+  const [naturalPrompt, setNaturalPrompt] = useState<string>('');
+  const [liveInterpretation, setLiveInterpretation] = useState<{
+    summary: string;
+    detectedCommands: string[];
+    suggestedCredits: number;
+    priceInCents: number;
+  } | null>(null);
 
   // Estados de Cotação e Execução de Job
   const [quoteData, setQuoteData] = useState<EditQuoteResponse | null>(null);
@@ -212,7 +96,7 @@ export const EditorPage: React.FC = () => {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Estados de Feedback (Opção A)
+  // Estados de Feedback
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -221,12 +105,12 @@ export const EditorPage: React.FC = () => {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
 
-  // Estados de Upload caso não haja imagem carregada
+  // Upload no caso de tela inicial sem imagem
   const [isUploading, setIsUploading] = useState(false);
-
   const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<any>(null);
 
-  // 1. Carregar dados da imagem quando imageId estiver presente
+  // Carregar dados da imagem
   const loadImageData = async (id: string, selectVersionId?: string) => {
     setIsLoadingImage(true);
     try {
@@ -248,7 +132,7 @@ export const EditorPage: React.FC = () => {
       const activeUrlRes = await api.images.getVersionUrl(id, targetVersionId);
       setActiveVersionUrl(activeUrlRes.url);
     } catch (err: any) {
-      error(err.message || 'Falha ao carregar a imagem do estúdio.', 'Erro');
+      error(err.message || 'Falha ao carregar a imagem.', 'Erro');
     } finally {
       setIsLoadingImage(false);
     }
@@ -266,7 +150,37 @@ export const EditorPage: React.FC = () => {
     }
   }, [imageId]);
 
-  // Troca de versão ativa selecionada
+  // Interpretação em tempo real da linguagem natural enquanto o usuário digita
+  useEffect(() => {
+    if (!naturalPrompt.trim() || naturalPrompt.trim().length < 4) {
+      setLiveInterpretation(null);
+      return;
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await api.edits.interpret(naturalPrompt.trim());
+        setLiveInterpretation({
+          summary: res.interpretation.humanFriendlySummary,
+          detectedCommands: res.interpretation.allDetectedCommands,
+          suggestedCredits: res.interpretation.suggestedCredits,
+          priceInCents: res.interpretation.priceInCents,
+        });
+      } catch {
+        // Silencioso em caso de erro de rede no debounce
+      }
+    }, 400);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [naturalPrompt]);
+
+  // Troca de versão ativa selecionada (Histórico Não-Destrutivo)
   const handleSelectVersion = async (version: ImageVersion) => {
     if (!image) return;
     setActiveVersionId(version.id);
@@ -278,19 +192,7 @@ export const EditorPage: React.FC = () => {
     }
   };
 
-  // Troca de ferramenta (com preservação inteligente de prompt se o usuário já editou)
-  const handleSelectTool = (toolId: EditTool) => {
-    const config = TOOLS_CONFIG.find((t) => t.id === toolId);
-    if (!config) return;
-    setSelectedTool(toolId);
-    // Se o prompt atual for igual ao default de outra ferramenta, atualiza para o default desta
-    const isCurrentDefault = TOOLS_CONFIG.some((t) => t.defaultPrompt === promptText);
-    if (isCurrentDefault || !promptText.trim()) {
-      setPromptText(config.defaultPrompt);
-    }
-  };
-
-  // 2. Upload de nova imagem
+  // Upload de nova imagem
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
     try {
@@ -298,7 +200,7 @@ export const EditorPage: React.FC = () => {
       try {
         thumbBlob = await generateThumbnail(file);
       } catch (tErr) {
-        console.warn('Miniatura falhou, prosseguindo com imagem original:', tErr);
+        console.warn('Miniatura falhou, prosseguindo:', tErr);
       }
 
       const res = await api.images.upload(file, thumbBlob);
@@ -311,12 +213,12 @@ export const EditorPage: React.FC = () => {
     }
   };
 
-  // 3. Solicitar Cotação de Créditos
+  // Solicitar Cotação
   const handleRequestQuote = async () => {
     if (!image || !activeVersionId) return;
 
-    if (!promptText.trim()) {
-      error('Por favor, insira uma instrução ou selecione uma ferramenta.', 'Prompt Vazio');
+    if (!naturalPrompt.trim()) {
+      error('Escreva o que você deseja mudar na foto.', 'Texto em branco');
       return;
     }
 
@@ -325,27 +227,25 @@ export const EditorPage: React.FC = () => {
       const quote = await api.edits.quote({
         imageId: image.id,
         versionId: activeVersionId,
-        prompt: promptText.trim(),
-        tool: selectedTool,
-        tier: selectedTier,
+        prompt: naturalPrompt.trim(),
       });
       setQuoteData(quote);
       setIsConfirmModalOpen(true);
     } catch (err: any) {
-      error(err.message || 'Falha ao orçar a edição de créditos.', 'Erro na Cotação');
+      error(err.message || 'Falha ao orçar a edição.', 'Erro na Cotação');
     } finally {
       setIsQuoting(false);
     }
   };
 
-  // 4. Confirmar e Iniciar Execução do Job
+  // Confirmar e Executar Edição com IA
   const handleConfirmEdit = async () => {
     if (!quoteData || !image) return;
 
     setIsConfirmModalOpen(false);
     setIsProcessing(true);
     setProgressPercent(15);
-    setStatusMessage('Reservando créditos e enfileirando job...');
+    setStatusMessage('Compreendendo sua ideia e preparando a IA...');
 
     abortControllerRef.current = new AbortController();
 
@@ -353,21 +253,21 @@ export const EditorPage: React.FC = () => {
       const confirmRes = await api.edits.confirm(quoteData.editRequestId);
       setActiveJobId(confirmRes.jobId);
       setProgressPercent(35);
-      setStatusMessage('Enviando ao pipeline de inteligência artificial...');
+      setStatusMessage('Transformando a fotografia com máxima resolução...');
 
-      // Inicia polling com backoff
+      // Polling do job
       const finishedJob = await api.edits.pollJob(
         confirmRes.jobId,
         (currentJob, attempt) => {
           if (attempt === 1) {
-            setProgressPercent(50);
-            setStatusMessage('Aprimorando pixels e renderizando detalhes...');
+            setProgressPercent(55);
+            setStatusMessage('Aplicando efeitos visuais e iluminação de estúdio...');
           } else if (attempt === 2) {
-            setProgressPercent(75);
-            setStatusMessage('Aplicando correções de fidelidade e iluminação...');
+            setProgressPercent(80);
+            setStatusMessage('Preservando traços faciais e refinando bordas...');
           } else {
-            setProgressPercent(90);
-            setStatusMessage('Finalizando nova versão e salvando no R2...');
+            setProgressPercent(95);
+            setStatusMessage('Salvando nova versão em alta definição...');
           }
         },
         abortControllerRef.current.signal
@@ -375,18 +275,21 @@ export const EditorPage: React.FC = () => {
 
       if (finishedJob.status === 'completed') {
         setProgressPercent(100);
-        setStatusMessage('Edição concluída com sucesso!');
-        success('Nova versão gerada com sucesso!', 'Edição Concluída');
+        setStatusMessage('Foto transformada com sucesso!');
+        success('Sua foto editada está pronta!', 'Transformação Concluída ✨');
         await refreshWallet();
-        // Recarrega imagem selecionando a nova versão
+        // Recarrega selecionando a nova versão
         await loadImageData(image.id, finishedJob.resultVersionId);
+        // Limpa o prompt para a próxima ideia
+        setNaturalPrompt('');
+        setLiveInterpretation(null);
       } else {
-        throw new Error(finishedJob.errorMessage || 'Falha técnica no processamento do modelo.');
+        throw new Error(finishedJob.errorMessage || 'Falha no processamento da imagem.');
       }
     } catch (err: any) {
       error(
-        err.message || 'Ocorreu uma falha no processamento. Seus créditos foram liberados.',
-        'Falha no Job'
+        err.message || 'Houve uma falha momentânea. Seus créditos não foram descontados.',
+        'Falha no Processamento'
       );
       await refreshWallet();
     } finally {
@@ -395,34 +298,33 @@ export const EditorPage: React.FC = () => {
     }
   };
 
-  // Download nos 3 formatos com Canvas
+  // Download nos 3 formatos
   const handleDownload = async (format: ExportFormat) => {
     if (!activeVersionUrl || !image) return;
     setIsDownloading(true);
     try {
-      const filename = `${image.title || 'photostudio'}_v${
-        versions.find((v) => v.id === activeVersionId)?.versionNumber || 'edit'
+      const filename = `${image.title || 'foto'}_v${
+        versions.find((v) => v.id === activeVersionId)?.versionNumber || 'editada'
       }`;
       await convertAndDownload(activeVersionUrl, filename, format);
-      success(`Download em ${format.toUpperCase()} iniciado com sucesso!`, 'Exportado');
+      success(`Download em ${format.toUpperCase()} iniciado!`, 'Baixado');
 
-      // Se ainda não avaliou nesta sessão, convida com o modal após 1.2s
       if (!hasSubmittedFeedback) {
         setTimeout(() => {
           setIsFeedbackModalOpen(true);
         }, 1200);
       }
     } catch (err: any) {
-      error(err.message || 'Falha ao processar download do arquivo.', 'Erro no Download');
+      error(err.message || 'Falha ao baixar imagem.', 'Erro no Download');
     } finally {
       setIsDownloading(false);
     }
   };
 
-  // Envio de Feedback do Assinante para o Painel Admin
+  // Envio de Feedback do Assinante
   const handleSubmitFeedback = async () => {
     if (!feedbackMessage.trim()) {
-      error('Por favor, digite um breve comentário sobre sua experiência.', 'Comentário Obrigatório');
+      error('Por favor, digite seu comentário.', 'Comentário Obrigatório');
       return;
     }
     setIsSubmittingFeedback(true);
@@ -435,7 +337,7 @@ export const EditorPage: React.FC = () => {
       setHasSubmittedFeedback(true);
       setIsFeedbackModalOpen(false);
       setFeedbackMessage('');
-      success('Sua avaliação foi enviada com sucesso para nossa equipe executiva!', 'Obrigado pelo Feedback ⭐');
+      success('Obrigado! Sua avaliação foi enviada para nossa equipe.', 'Feedback Registrado ⭐');
     } catch (err: any) {
       error(err.message || 'Falha ao registrar feedback.', 'Erro');
     } finally {
@@ -443,28 +345,27 @@ export const EditorPage: React.FC = () => {
     }
   };
 
-  const activeToolConfig = TOOLS_CONFIG.find((t) => t.id === selectedTool) || TOOLS_CONFIG[0];
   const activeVersion = versions.find((v) => v.id === activeVersionId);
   const isOriginal = activeVersion?.versionNumber === 1;
 
-  // SE NÃO HÁ IMAGEM CARREGADA: EXIBE TELA DE NOVO UPLOAD NO STUDIO
+  // Tela Inicial: Se não há imagem aberta, tela para enviar foto
   if (!imageId || !image) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      <div className="max-w-3xl mx-auto space-y-8 pb-12">
         <PageHeader
-          title="Photo Studio AI — Estúdio de Edição"
-          description="Envie sua foto para aplicar as 14 ferramentas profissionais de inteligência artificial generativa."
-          badge={<Badge variant="gold">Cockpit Pro</Badge>}
+          title="Transforme Qualquer Foto com Inteligência Artificial"
+          description="Você só precisa enviar sua foto e escrever em português o que quer mudar. Nossa IA cuida de todo o resto!"
+          badge={<Badge variant="gold">Motor Inteligente 70 Comandos</Badge>}
         />
 
         <Card className="border-border shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5 text-primary" />
-              Carregar Imagem para o Estúdio
+              Enviar Foto para Edição
             </CardTitle>
             <CardDescription>
-              Formatos aceitos: JPG, PNG ou WebP de alta resolução (até 15MB e 40 megapixels).
+              Selecione uma foto da sua galeria ou computador (JPG, PNG ou WebP).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -474,25 +375,13 @@ export const EditorPage: React.FC = () => {
             />
             {isUploading && (
               <div className="text-center py-4 space-y-2">
-                <Progress value={70} label="Enviando para o R2 seguro..." />
+                <Progress value={70} label="Carregando fotografia com segurança..." />
                 <p className="text-xs text-muted-foreground animate-pulse">
-                  Criando miniatura otimizada no navegador e despachando arquivo...
+                  Preparando sua imagem no estúdio...
                 </p>
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border pt-4">
-            <span>Dúvidas ou sugestões de novas IAs generativas?</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsFeedbackModalOpen(true)}
-              leftIcon={<Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
-              className="text-amber-500 hover:text-amber-400"
-            >
-              Dar Feedback ⭐
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     );
@@ -500,7 +389,7 @@ export const EditorPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      {/* Top Bar do Estúdio */}
+      {/* Barra de Navegação do Estúdio */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
         <div className="flex items-center gap-3">
           <Button
@@ -518,12 +407,13 @@ export const EditorPage: React.FC = () => {
               {image.title}
             </h1>
             <span className="text-[11px] text-muted-foreground">
-              Versão ativa: <strong>v{activeVersion?.versionNumber || 1}</strong> ({activeVersion?.width}x{activeVersion?.height}px)
+              Versão atual: <strong>v{activeVersion?.versionNumber || 1}</strong>
+              {isOriginal ? ' (Foto Original)' : ' (Modificação com IA)'}
             </span>
           </div>
         </div>
 
-        {/* Botões de Ação: Download Multi-formato e Nova Foto */}
+        {/* Botões de Ação: Exportar e Nova Foto */}
         <div className="flex items-center gap-2">
           <DropdownMenu
             trigger={
@@ -532,28 +422,28 @@ export const EditorPage: React.FC = () => {
                 size="sm"
                 leftIcon={<Download className="h-4 w-4" />}
                 isLoading={isDownloading}
-                loadingText="Convertendo..."
+                loadingText="Baixando..."
               >
-                Exportar / Baixar
+                Baixar Foto
               </Button>
             }
           >
             <DropdownMenuItem onClick={() => handleDownload('png')}>
               <div className="flex flex-col">
-                <span className="font-semibold text-xs">PNG de Alta Fidelidade</span>
-                <span className="text-[10px] text-muted-foreground">Ideal para fundos transparentes</span>
+                <span className="font-semibold text-xs">PNG (Máxima Fidelidade)</span>
+                <span className="text-[10px] text-muted-foreground">Ideal para fundos transparentes e alta qualidade</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDownload('jpg')}>
               <div className="flex flex-col">
-                <span className="font-semibold text-xs">JPG Otimizado</span>
-                <span className="text-[10px] text-muted-foreground">Recomendado para web e e-commerce</span>
+                <span className="font-semibold text-xs">JPG (Padrão para Redes Sociais)</span>
+                <span className="text-[10px] text-muted-foreground">Leve e perfeito para Instagram e WhatsApp</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDownload('webp')}>
               <div className="flex flex-col">
-                <span className="font-semibold text-xs">WebP Moderno</span>
-                <span className="text-[10px] text-muted-foreground">Máxima compressão sem perda visível</span>
+                <span className="font-semibold text-xs">WebP (Web Moderno)</span>
+                <span className="text-[10px] text-muted-foreground">Super otimizado para sites e e-commerce</span>
               </div>
             </DropdownMenuItem>
           </DropdownMenu>
@@ -565,7 +455,7 @@ export const EditorPage: React.FC = () => {
             leftIcon={<Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
             className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
           >
-            Dar Feedback ⭐
+            Avaliar ⭐
           </Button>
 
           <Button
@@ -574,185 +464,136 @@ export const EditorPage: React.FC = () => {
             leftIcon={<Upload className="h-4 w-4" />}
             onClick={() => navigate('/dashboard')}
           >
-            Nova Foto
+            Outra Foto
           </Button>
         </div>
       </div>
 
-      {/* Cockpit Principal: Lateral de Ferramentas + Canvas Central com Slider */}
+      {/* Grid Principal: Entrada Natural à Esquerda + Visualizador Antes/Depois à Direita */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* BARRA LATERAL ESQUERDA: Ferramentas & Configuração (5 Colunas) */}
+        {/* PAINEL ESQUERDO: Entrada em Linguagem Natural (5 Colunas) */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="border-border">
+          <Card className="border-border shadow-md">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center justify-between">
+              <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4 text-primary" />
-                  Ferramentas Especializadas
+                  <Wand2 className="h-5 w-5 text-amber-500" />
+                  O que você quer mudar na foto?
                 </span>
-                <Badge variant="secondary" size="sm">
-                  14 Motores
+                <Badge variant="gold" size="sm">
+                  IA Automática
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs">
-                Selecione o motor de IA desejado para a transformação.
+                Pode escrever do seu jeito, com palavras simples ou gírias. Nossa inteligência artificial entende e cuida de tudo!
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4">
-              {/* Abas / Categorias das Ferramentas */}
-              <div className="space-y-3">
-                {(['Fundo & Isolamento', 'Qualidade & Restauração', 'Comercial & Criativo'] as const).map(
-                  (cat) => (
-                    <div key={cat} className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {cat}
-                      </span>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {TOOLS_CONFIG.filter((t) => t.category === cat).map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => handleSelectTool(t.id)}
-                            className={`p-2 rounded-lg text-left text-xs font-semibold transition-all border select-none ${
-                              selectedTool === t.id
-                                ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                                : 'bg-secondary/40 text-foreground border-border/60 hover:bg-secondary hover:border-border'
-                            }`}
-                          >
-                            <span className="block truncate">{t.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-
-              {/* Descrição da Ferramenta Ativa */}
-              <div className="p-3 rounded-xl bg-secondary/50 border border-border/80 text-xs space-y-1">
-                <span className="font-bold text-foreground block">{activeToolConfig.label}</span>
-                <p className="text-muted-foreground text-[11px] leading-relaxed">
-                  {activeToolConfig.description}
-                </p>
-              </div>
-
-              {/* Campo de Prompt em Linguagem Natural com Preservação */}
+              {/* Campo de Linguagem Natural */}
               <div className="space-y-2">
                 <Textarea
-                  label="Instrução Criativa (Prompt IA)"
-                  placeholder="Descreva a alteração ou mantenha a instrução padrão recomendada..."
-                  value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
+                  placeholder="Conte o que você quer mudar na foto. Pode escrever do seu jeito! (Ex: 'Me coloca flutuando em gravidade zero', 'Tira as pessoas do fundo e melhora a iluminação', 'Ensaio profissional de casamento')..."
+                  value={naturalPrompt}
+                  onChange={(e) => setNaturalPrompt(e.target.value)}
                   showCharCount
                   maxCharacters={2000}
-                  rows={3}
+                  rows={4}
+                  className="text-sm font-normal"
                 />
+              </div>
 
-                {/* Sugestões Rápidas de Prompt Contextuais */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground font-semibold">
-                    Sugestões rápidas de refinamento:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeToolConfig.suggestions.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setPromptText(s)}
-                        className="px-2 py-1 rounded-md bg-secondary border border-border text-[10px] text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
-                      >
-                        + {s}
-                      </button>
-                    ))}
+              {/* Inspirações Rápidas em Português */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-amber-500" />
+                  Inspirações rápidas (clique para preencher):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {INSPIRATION_CHIPS.map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setNaturalPrompt(chip.prompt)}
+                      className="px-2.5 py-1 rounded-full bg-secondary/80 border border-border text-[11px] text-foreground/80 hover:text-foreground hover:bg-secondary hover:border-amber-500/50 transition-all text-left"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview da Interpretação em Tempo Real */}
+              {liveInterpretation && (
+                <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Entendimento da IA:
+                    </span>
+                    <Badge variant="gold" size="sm">
+                      {liveInterpretation.suggestedCredits} {liveInterpretation.suggestedCredits === 1 ? 'crédito' : 'créditos'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs font-medium text-foreground">
+                    {liveInterpretation.summary}
+                  </p>
+                  <div className="flex items-center justify-between pt-1 border-t border-border/50 text-[11px] text-muted-foreground">
+                    <span>Custo estimado:</span>
+                    <span className="font-semibold text-foreground">
+                      {liveInterpretation.suggestedCredits} crédito ({liveInterpretation.suggestedCredits === 1 ? 'R$ 7,90' : 'R$ 15,80'})
+                    </span>
                   </div>
                 </div>
-              </div>
-
-              {/* Seletor de Tier */}
-              <div className="space-y-2 pt-2 border-t border-border/60">
-                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                  <span>Qualidade & Nível de Detalhe</span>
-                  <span className="font-mono text-[11px] text-amber-500 font-bold">
-                    {selectedTier === 'premium' ? '2 Créditos' : '1 Crédito'}
-                  </span>
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTier('economico')}
-                    className={`p-2 rounded-lg border text-left text-xs transition-all ${
-                      selectedTier === 'economico'
-                        ? 'border-primary bg-primary/10 font-bold'
-                        : 'border-border bg-card text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    <span className="block font-semibold">Econômico</span>
-                    <span className="text-[10px] opacity-80">1 crédito</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTier('padrao')}
-                    className={`p-2 rounded-lg border text-left text-xs transition-all ${
-                      selectedTier === 'padrao'
-                        ? 'border-primary bg-primary/10 font-bold'
-                        : 'border-border bg-card text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    <span className="block font-semibold">Padrão</span>
-                    <span className="text-[10px] opacity-80">1 crédito</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTier('premium')}
-                    className={`p-2 rounded-lg border text-left text-xs transition-all ${
-                      selectedTier === 'premium'
-                        ? 'border-amber-500 bg-amber-500/10 font-bold text-amber-500'
-                        : 'border-border bg-card text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    <span className="block font-semibold">Premium</span>
-                    <span className="text-[10px] opacity-80">2 créditos</span>
-                  </button>
-                </div>
-              </div>
+              )}
             </CardContent>
 
             <CardFooter className="pt-2 flex flex-col gap-3">
               <Button
                 variant="gold"
                 fullWidth
-                size="md"
+                size="lg"
                 onClick={handleRequestQuote}
                 isLoading={isQuoting}
-                loadingText="Calculando cotação..."
+                loadingText="Analisando solicitação..."
                 leftIcon={<Sparkles className="h-4 w-4" />}
-                disabled={isProcessing}
+                disabled={isProcessing || !naturalPrompt.trim()}
               >
-                Orçar e Executar Edição
+                Transformar Foto com IA
               </Button>
-              <div className="flex items-center justify-between w-full text-[11px] text-muted-foreground">
-                <span>Saldo na carteira:</span>
-                <span className="font-mono font-bold text-foreground">
+
+              <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
+                <span>Seu saldo atual:</span>
+                <span className="font-bold text-foreground font-mono">
                   {walletBalance?.available ?? 0} créditos
                 </span>
               </div>
             </CardFooter>
           </Card>
+
+          {/* Dica de Segurança e Garantia */}
+          <div className="p-4 rounded-xl bg-secondary/40 border border-border/60 text-xs text-muted-foreground space-y-1">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              Garantia de Satisfação Total
+            </span>
+            <p className="leading-relaxed">
+              Sua foto original nunca é perdida. Cada transformação gera uma nova versão para você comparar. Se o resultado não for o esperado, você pode pedir novas modificações facilmente!
+            </p>
+          </div>
         </div>
 
         {/* CANVAS CENTRAL E HISTÓRICO DE VERSÕES (7 Colunas) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Visualizador Antes e Depois */}
-          <Card className="border-border overflow-hidden">
+          <Card className="border-border overflow-hidden shadow-md">
             <CardHeader className="py-3 px-4 bg-secondary/40 border-b border-border flex flex-row items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                <Sliders className="h-4 w-4 text-primary" />
-                Comparador Visual Antes / Depois
+                <Sliders className="h-4 w-4 text-amber-500" />
+                Comparador Antes e Depois
               </div>
               <Badge variant={isOriginal ? 'secondary' : 'success'} size="sm">
-                {isOriginal ? 'Versão Original (v1)' : `Versão Derivada (v${activeVersion?.versionNumber})`}
+                {isOriginal ? 'Foto Original (v1)' : `Versão Modificada (v${activeVersion?.versionNumber})`}
               </Badge>
             </CardHeader>
             <CardContent className="p-0">
@@ -762,7 +603,7 @@ export const EditorPage: React.FC = () => {
                     <BeforeAfterSlider
                       beforeImage={originalVersionUrl}
                       afterImage={activeVersionUrl}
-                      beforeLabel="Foto Original (v1)"
+                      beforeLabel="Foto Original"
                       afterLabel={`Versão v${activeVersion?.versionNumber} IA`}
                       initialPosition={50}
                     />
@@ -779,19 +620,21 @@ export const EditorPage: React.FC = () => {
               </div>
             </CardContent>
             {activeVersion?.promptSummary && (
-              <div className="p-3 bg-secondary/30 border-t border-border text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">Prompt utilizado nesta versão: </span>
-                <span>{activeVersion.promptSummary}</span>
+              <div className="p-3 bg-secondary/30 border-t border-border text-xs text-muted-foreground flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-foreground">Transformação aplicada: </span>
+                  <span>{activeVersion.promptSummary}</span>
+                </div>
               </div>
             )}
           </Card>
 
           {/* Barra de Progresso Durante Processamento */}
           {isProcessing && (
-            <Card className="border-primary/50 bg-primary/5 p-4 space-y-3">
+            <Card className="border-amber-500/50 bg-amber-500/5 p-4 space-y-3">
               <Progress value={progressPercent} label={statusMessage} showValueLabel />
               <p className="text-xs text-muted-foreground text-center">
-                Aguarde alguns segundos enquanto a IA gera a nova imagem com precisão óptica.
+                Aguarde alguns segundos enquanto a IA gera a nova imagem com alta resolução...
               </p>
             </Card>
           )}
@@ -802,14 +645,14 @@ export const EditorPage: React.FC = () => {
               <CardTitle className="text-sm flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  Histórico de Versões Não-Destrutivo
+                  Galeria de Versões desta Foto
                 </span>
                 <span className="text-xs text-muted-foreground font-normal">
-                  {versions.length} {versions.length === 1 ? 'versão salva' : 'versões salvas'}
+                  {versions.length} {versions.length === 1 ? 'versão' : 'versões'}
                 </span>
               </CardTitle>
               <CardDescription className="text-xs">
-                A foto original (v1) nunca é sobrescrita. Clique em qualquer versão para torná-la a base de novas alterações.
+                Clique em qualquer versão para visualizá-la, baixá-la ou usá-la como base para novas alterações.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -822,7 +665,7 @@ export const EditorPage: React.FC = () => {
                       onClick={() => handleSelectVersion(ver)}
                       className={`shrink-0 w-28 rounded-xl border p-2 cursor-pointer transition-all select-none ${
                         isSelected
-                          ? 'border-primary ring-2 ring-primary/40 bg-primary/5'
+                          ? 'border-amber-500 ring-2 ring-amber-500/30 bg-amber-500/5'
                           : 'border-border bg-card hover:bg-secondary/60'
                       }`}
                     >
@@ -842,7 +685,7 @@ export const EditorPage: React.FC = () => {
                           {ver.versionNumber === 1 ? 'v1 (Original)' : `v${ver.versionNumber}`}
                         </span>
                         <span className="text-[10px] text-muted-foreground block truncate">
-                          {ver.promptSummary || 'Upload base'}
+                          {ver.promptSummary || 'Original'}
                         </span>
                       </div>
                     </div>
@@ -854,39 +697,16 @@ export const EditorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Rodapé Discreto do Studio com Gatilho de Feedback */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-border/60 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground/80">Photo Studio AI</span>
-          <span>•</span>
-          <span>Pipeline Generativo Ultrarrápido</span>
-          <span>•</span>
-          <span>Garantia de estorno em caso de falha de IA</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Tem alguma sugestão ou elogio?</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFeedbackModalOpen(true)}
-            leftIcon={<Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
-            className="text-amber-500 hover:text-amber-400 font-medium"
-          >
-            Dar Feedback ⭐
-          </Button>
-        </div>
-      </div>
-
       {/* Modal de Avaliação & Feedback do Assinante */}
       <Modal
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
-        title="O que você achou da experiência no Studio?"
-        description="Sua avaliação ajuda a aprimorar nossos modelos generativos e chega diretamente ao painel executivo."
+        title="O que você achou do resultado?"
+        description="Sua opinião é fundamental para aprimorarmos continuamente nossa inteligência artificial."
         footer={
           <>
             <Button variant="ghost" onClick={() => setIsFeedbackModalOpen(false)}>
-              Mais tarde
+              Depois
             </Button>
             <Button
               variant="gold"
@@ -904,7 +724,7 @@ export const EditorPage: React.FC = () => {
           {/* Estrelas 1 a 5 */}
           <div className="text-center space-y-2">
             <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-              Nota da Experiência
+              Sua Nota
             </label>
             <div className="flex items-center justify-center gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -927,26 +747,26 @@ export const EditorPage: React.FC = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground font-medium">
-              {feedbackRating === 5 && '⭐ Excelente! Qualidade impecável.'}
-              {feedbackRating === 4 && '👍 Muito bom! Pequenos detalhes a ajustar.'}
-              {feedbackRating === 3 && '👌 Razoável, pode melhorar.'}
-              {feedbackRating === 2 && '👎 Não atendeu às expectativas.'}
-              {feedbackRating === 1 && '⚠️ Ruim / Apresentou falha.'}
+              {feedbackRating === 5 && '⭐ Incrível! Ficou perfeita.'}
+              {feedbackRating === 4 && '👍 Muito boa! Gostei do resultado.'}
+              {feedbackRating === 3 && '👌 Ficou razoável.'}
+              {feedbackRating === 2 && '👎 Não ficou como eu esperava.'}
+              {feedbackRating === 1 && '⚠️ Não gostei.'}
             </p>
           </div>
 
-          {/* Categoria do Feedback */}
+          {/* Categoria */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-foreground">
-              Categoria
+              Sobre o que você quer falar?
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
-                { id: 'qualidade_ia', label: 'Qualidade da IA' },
-                { id: 'velocidade', label: 'Velocidade / Latência' },
-                { id: 'sugestao', label: 'Sugestão de Recurso' },
-                { id: 'bug', label: 'Problema / Falha' },
-                { id: 'geral', label: 'Geral / Outros' },
+                { id: 'qualidade_ia', label: 'Qualidade da Foto' },
+                { id: 'velocidade', label: 'Rapidez na Entrega' },
+                { id: 'sugestao', label: 'Ideia / Sugestão' },
+                { id: 'bug', label: 'Problema' },
+                { id: 'geral', label: 'Geral' },
               ].map((cat) => (
                 <button
                   key={cat.id}
@@ -954,8 +774,8 @@ export const EditorPage: React.FC = () => {
                   onClick={() => setFeedbackCategory(cat.id as any)}
                   className={`px-3 py-2 rounded-lg text-xs font-medium border text-left transition-colors ${
                     feedbackCategory === cat.id
-                      ? 'bg-primary/10 border-primary text-primary dark:text-primary-foreground dark:bg-primary/20'
-                      : 'bg-card border-border text-muted-foreground hover:border-primary/50'
+                      ? 'bg-amber-500/10 border-amber-500 text-amber-500 font-bold'
+                      : 'bg-card border-border text-muted-foreground hover:border-amber-500/40'
                   }`}
                 >
                   {cat.label}
@@ -967,12 +787,12 @@ export const EditorPage: React.FC = () => {
           {/* Comentário */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-foreground">
-              Seu comentário ou sugestão
+              Seu comentário
             </label>
             <Textarea
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
-              placeholder="O que achou do recorte, nitidez ou iluminação? Há alguma ferramenta que gostaria de ver no Studio?"
+              placeholder="Conte o que achou dos detalhes, cores ou nitidez da foto..."
               rows={4}
               className="text-xs"
             />
@@ -985,17 +805,18 @@ export const EditorPage: React.FC = () => {
         <Modal
           isOpen={isConfirmModalOpen}
           onClose={() => setIsConfirmModalOpen(false)}
-          title="Confirmar Execução de Edição de Imagem"
-          description="Revise a cotação de créditos e o tier selecionado antes de iniciar a renderização."
+          title="Confirmar Transformação da Fotografia"
+          description="Confira o resumo da sua alteração antes de iniciar."
           footer={
             <>
               <Button variant="ghost" onClick={() => setIsConfirmModalOpen(false)}>
-                Cancelar
+                Voltar e Ajustar
               </Button>
               <Button
                 variant="gold"
                 onClick={handleConfirmEdit}
                 leftIcon={<Sparkles className="h-4 w-4" />}
+                disabled={(quoteData.balance?.available ?? 0) < quoteData.credits}
               >
                 Confirmar ({quoteData.credits} {quoteData.credits === 1 ? 'Crédito' : 'Créditos'})
               </Button>
@@ -1003,40 +824,40 @@ export const EditorPage: React.FC = () => {
           }
         >
           <div className="space-y-4">
-            <div className="p-3 rounded-lg bg-secondary/60 border border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Ferramenta Selecionada:</span>
-              <span className="font-semibold text-foreground">{activeToolConfig.label}</span>
+            {/* O que a IA fará */}
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1">
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 block uppercase tracking-wider">
+                Resumo da Edição
+              </span>
+              <p className="text-sm font-semibold text-foreground">
+                {quoteData.humanFriendlySummary || naturalPrompt}
+              </p>
             </div>
 
+            {/* Custo */}
             <div className="p-3 rounded-lg bg-secondary/60 border border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Tier Escolhido:</span>
-              <span className="font-semibold text-foreground capitalize">
-                {quoteData.tier} ({quoteData.modelLabel})
+              <span className="text-muted-foreground">Valor:</span>
+              <span className="font-bold text-foreground">
+                {quoteData.credits} {quoteData.credits === 1 ? 'crédito' : 'créditos'} ({quoteData.priceInCents ? `R$ ${(quoteData.priceInCents / 100).toFixed(2).replace('.', ',')}` : 'R$ 7,90'})
               </span>
             </div>
 
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
-              <span className="text-amber-600 dark:text-amber-400 font-medium">Custo desta Edição:</span>
-              <span className="font-mono font-bold text-amber-500">
-                {quoteData.credits} {quoteData.credits === 1 ? 'crédito' : 'créditos'}
-              </span>
-            </div>
-
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Saldo Disponível:</span>
-              <span className="font-mono font-semibold text-foreground">
+            {/* Saldo */}
+            <div className="p-3 rounded-lg bg-secondary/60 border border-border flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Seu Saldo Disponível:</span>
+              <span className="font-mono font-bold text-foreground">
                 {quoteData.balance.available} créditos
               </span>
             </div>
 
             {quoteData.balance.available < quoteData.credits && (
               <Alert variant="danger">
-                Saldo insuficiente na sua carteira. Recarregue seus créditos para prosseguir.
+                Você não possui créditos suficientes. Adquira mais créditos na carteira para realizar esta edição.
               </Alert>
             )}
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Garantia Photo Studio AI: Em caso de qualquer instabilidade técnica do modelo de IA ou falha de conexão, a reserva de créditos é estornada integralmente para o seu saldo.
+              🛡️ <strong>Garantia Total:</strong> Seus créditos só são debitados definitivamente se a foto for entregue com sucesso.
             </p>
           </div>
         </Modal>

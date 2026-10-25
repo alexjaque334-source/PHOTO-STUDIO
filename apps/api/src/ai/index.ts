@@ -26,6 +26,8 @@ export * from './prompts';
 export * from './tools';
 export * from './models';
 export * from './openrouter-client';
+export * from './catalog';
+export * from './nlu';
 
 export class AiEditServiceImpl implements AiEditService {
   private client: OpenRouterClient;
@@ -35,12 +37,23 @@ export class AiEditServiceImpl implements AiEditService {
   }
 
   /**
-   * Cotação de créditos e modelo para uma ferramenta e tier.
+   * Cotação de créditos e modelo para uma ferramenta, tier ou prompt em linguagem natural.
    */
-  async quote(input: { tier: Tier; tool: EditTool }): Promise<AiQuote> {
-    const descriptor = getToolDescriptor(input.tool);
+  async quote(input: { tier: Tier; tool?: EditTool; prompt?: string }): Promise<AiQuote> {
+    if (input.prompt && input.prompt.trim().length >= 3) {
+      const { interpretNaturalLanguage } = await import('./nlu');
+      const interpretation = interpretNaturalLanguage(input.prompt);
+      return {
+        tier: input.tier,
+        credits: interpretation.suggestedCredits,
+        modelLabel: 'Motor Inteligente Photo Studio AI (70 Comandos)',
+      };
+    }
+
+    const tool = input.tool || 'free_prompt';
+    const descriptor = getToolDescriptor(tool);
     if (!descriptor) {
-      throw new DomainError('VALIDATION_ERROR', `Ferramenta de edição inválida: ${input.tool}`, 422);
+      throw new DomainError('VALIDATION_ERROR', `Ferramenta de edição inválida: ${tool}`, 422);
     }
 
     const { credits, modelLabel } = await getQuoteForTier(this.env, input.tier);
@@ -77,8 +90,15 @@ export class AiEditServiceImpl implements AiEditService {
       );
     }
 
-    // Constrói o prompt técnico final sanitizado
-    const technicalPrompt = buildFinalPrompt(input.tool, input.prompt);
+    // Constrói o prompt técnico final sanitizado e consolidado via NLU de 70 comandos
+    let technicalPrompt: string;
+    if (input.prompt && input.prompt.trim().length >= 3) {
+      const { interpretNaturalLanguage } = await import('./nlu');
+      const interpretation = interpretNaturalLanguage(input.prompt);
+      technicalPrompt = interpretation.consolidatedTechnicalPrompt;
+    } else {
+      technicalPrompt = buildFinalPrompt(input.tool, input.prompt);
+    }
 
     // Obtém a cadeia de modelos ativos para este tier ordenados por prioridade
     const models = await getActiveModelsForTier(this.env, input.tier);

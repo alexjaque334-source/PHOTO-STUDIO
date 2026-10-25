@@ -263,6 +263,12 @@ export const AdminPage: React.FC = () => {
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
+  // ── 8. Catálogo dos 70 Comandos Internos de IA ──
+  const [commandsList, setCommandsList] = useState<any[]>([]);
+  const [commandSearch, setCommandSearch] = useState('');
+  const [commandCategoryFilter, setCommandCategoryFilter] = useState('todos');
+  const [isLoadingCommands, setIsLoadingCommands] = useState(true);
+
   // Carregar dados iniciais
   useEffect(() => {
     let isMounted = true;
@@ -419,6 +425,18 @@ export const AdminPage: React.FC = () => {
         setSettings((prev) => ({ ...prev, ...s }));
       })
       .catch(() => {});
+
+    // Catálogo dos 70 Comandos Internos de IA
+    api.edits
+      .getCatalog()
+      .then((res) => {
+        if (!isMounted) return;
+        setCommandsList(res.commands || []);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoadingCommands(false);
+      });
 
     return () => {
       isMounted = false;
@@ -686,6 +704,9 @@ export const AdminPage: React.FC = () => {
           </TabTrigger>
           <TabTrigger value="models" icon={<Cpu className="h-4 w-4" />}>
             Modelos de IA & Tiers
+          </TabTrigger>
+          <TabTrigger value="catalog" icon={<Sparkles className="h-4 w-4" />}>
+            Catálogo IA (70 Comandos)
           </TabTrigger>
           <TabTrigger value="settings" icon={<Sliders className="h-4 w-4" />}>
             Limites & Orçamento
@@ -1421,6 +1442,149 @@ export const AdminPage: React.FC = () => {
                 >
                   Salvar Limites do Sistema
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabContent>
+        {/* ════════════════════════════════════════════════════════════════
+            ABA 8: CATÁLOGO DOS 70 COMANDOS INTERNOS DE IA
+        ════════════════════════════════════════════════════════════════ */}
+        <TabContent value="catalog" className="space-y-6 pt-4">
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-amber-500" />
+                    Catálogo de Comandos Internos de IA (70 Motores)
+                  </CardTitle>
+                  <CardDescription>
+                    Base unificada de 70 comandos inteligentes (14 fundamentais + 56 avançados). O cliente escreve livremente em português brasileiro e o NLU mapeia para esses comandos de forma invisível.
+                  </CardDescription>
+                </div>
+                <Badge variant="gold" size="md" className="font-mono">
+                  {commandsList.length > 0 ? `${commandsList.length} Comandos` : '70 Comandos Ativos'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Barra de Busca e Filtros */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                <div className="relative flex-1">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por comando, intenção ou frase do cliente..."
+                    value={commandSearch}
+                    onChange={(e) => setCommandSearch(e.target.value)}
+                    className="pl-9 text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  {[
+                    'todos',
+                    'Ensaios',
+                    'Aniversários',
+                    'Casamentos',
+                    'Natureza',
+                    'Eventos',
+                    'Motion',
+                    'Comercial',
+                  ].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCommandCategoryFilter(cat)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
+                        commandCategoryFilter === cat
+                          ? 'bg-amber-500/10 border-amber-500 text-amber-500 font-bold'
+                          : 'bg-card border-border text-muted-foreground hover:border-amber-500/40'
+                      }`}
+                    >
+                      {cat === 'todos' ? 'Todas Categorias' : cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabela de Comandos */}
+              <div className="rounded-xl border border-border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 text-center">#</TableHead>
+                      <TableHead>Comando Interno</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead className="min-w-[220px]">Intenção Visual</TableHead>
+                      <TableHead className="min-w-[200px]">Exemplos em Português</TableHead>
+                      <TableHead className="text-center">Complexidade</TableHead>
+                      <TableHead className="text-center">Créditos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {commandsList
+                      .filter((cmd) => {
+                        const matchesCat =
+                          commandCategoryFilter === 'todos' ||
+                          cmd.category.toLowerCase().includes(commandCategoryFilter.toLowerCase());
+                        const q = commandSearch.toLowerCase();
+                        const matchesSearch =
+                          !q ||
+                          cmd.internalName.toLowerCase().includes(q) ||
+                          cmd.intent.toLowerCase().includes(q) ||
+                          cmd.userPhrases.some((p: string) => p.toLowerCase().includes(q)) ||
+                          cmd.category.toLowerCase().includes(q);
+                        return matchesCat && matchesSearch;
+                      })
+                      .map((cmd) => (
+                        <TableRow key={cmd.id} className="hover:bg-muted/40">
+                          <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                            {cmd.id}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-xs font-semibold text-foreground">
+                              {cmd.internalName}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" size="sm">
+                              {cmd.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-foreground/90">
+                            {cmd.intent}
+                          </TableCell>
+                          <TableCell className="text-[11px] text-muted-foreground">
+                            <div className="space-y-0.5">
+                              {cmd.userPhrases.slice(0, 2).map((phrase: string, idx: number) => (
+                                <span key={idx} className="block italic">
+                                  "{phrase}"
+                                </span>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                cmd.complexity === 'alta'
+                                  ? 'danger'
+                                  : cmd.complexity === 'média'
+                                  ? 'warning'
+                                  : 'success'
+                              }
+                              size="sm"
+                              className="capitalize"
+                            >
+                              {cmd.complexity}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-xs font-bold text-amber-500">
+                            {cmd.suggestedCredits} {cmd.suggestedCredits === 1 ? 'crédito' : 'créditos'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>

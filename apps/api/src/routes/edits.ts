@@ -27,23 +27,12 @@ const QuoteRequestSchema = z.object({
   imageId: z.string().min(1),
   versionId: z.string().min(1),
   prompt: z.string().min(3).max(2000),
-  tool: z.enum([
-    'free_prompt',
-    'remove_people',
-    'remove_objects',
-    'replace_background',
-    'remove_background',
-    'transparent_background',
-    'improve_lighting',
-    'improve_colors',
-    'sharpen',
-    'restore_photo',
-    'product_photo',
-    'add_elements',
-    'replace_elements',
-    'variations',
-  ]) as z.ZodType<EditTool>,
-  tier: z.enum(['economico', 'padrao', 'premium']) as z.ZodType<Tier>,
+  tool: z.string().optional().default('free_prompt'),
+  tier: z.enum(['economico', 'padrao', 'premium']).optional().default('padrao'),
+});
+
+const InterpretSchema = z.object({
+  prompt: z.string().min(1).max(2000),
 });
 
 const ConfirmEditSchema = z.object({
@@ -445,9 +434,9 @@ editRoutes.post('/quote', requireAuth(), async (c) => {
     throw new DomainError('NOT_FOUND', 'Imagem ou versão de origem não encontrada.', 404);
   }
 
-  // Calcula cotação de créditos via AI Service
-  const ai = createAiEditService(c.env);
-  const quote = await ai.quote({ tier: body.tier, tool: body.tool });
+  // Interpretação de linguagem natural via motor inteligente NLU (70 comandos)
+  const { interpretNaturalLanguage } = await import('../ai/nlu');
+  const interpretation = interpretNaturalLanguage(body.prompt);
 
   const wallet = await getWalletService(c.env);
   const balance = await wallet.getBalance(user.id);
@@ -467,9 +456,9 @@ editRoutes.post('/quote', requireAuth(), async (c) => {
       body.imageId,
       body.versionId,
       body.prompt,
-      body.tool,
-      body.tier,
-      quote.credits,
+      interpretation.primaryIntent.internalName,
+      body.tier || 'padrao',
+      interpretation.suggestedCredits,
       quoteExpiresAt,
       now,
     ],
@@ -477,11 +466,38 @@ editRoutes.post('/quote', requireAuth(), async (c) => {
 
   return c.json({
     editRequestId,
-    credits: quote.credits,
-    tier: quote.tier,
-    modelLabel: quote.modelLabel,
+    credits: interpretation.suggestedCredits,
+    priceInCents: interpretation.priceInCents,
+    humanFriendlySummary: interpretation.humanFriendlySummary,
+    primaryIntent: interpretation.primaryIntent.internalName,
+    detectedIntents: interpretation.allDetectedCommands.map((cmd) => ({
+      id: cmd.id,
+      name: cmd.internalName,
+      intent: cmd.intent,
+      category: cmd.category,
+      complexity: cmd.complexity,
+    })),
+    tier: body.tier || 'padrao',
+    modelLabel: 'Motor Inteligente Photo Studio AI (70 Comandos)',
     expiresAt: quoteExpiresAt,
     balance,
+  });
+});
+
+// POST /edits/interpret - Análise semântica rápida de intenções sem gerar requisição
+editRoutes.post('/interpret', requireAuth(), async (c) => {
+  const body = await parseJson(c, InterpretSchema);
+  const { interpretNaturalLanguage } = await import('../ai/nlu');
+  const interpretation = interpretNaturalLanguage(body.prompt);
+  return c.json(interpretation);
+});
+
+// GET /edits/catalog - Catálogo completo dos 70 comandos internos
+editRoutes.get('/catalog', async (c) => {
+  const { COMMANDS_CATALOG } = await import('../ai/catalog');
+  return c.json({
+    total: COMMANDS_CATALOG.length,
+    commands: COMMANDS_CATALOG,
   });
 });
 
