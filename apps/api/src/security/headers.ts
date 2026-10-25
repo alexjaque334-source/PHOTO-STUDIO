@@ -58,8 +58,8 @@ export function securityHeaders(options?: SecurityHeadersOptions): MiddlewareHan
     // 5. Política de Referrer
     c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-    // 6. Permissions Policy (Câmera autorizada para captura opcional de selfie de avatar, restante bloqueado)
-    c.header('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=()');
+    // 6. Permissions Policy (Câmera autorizada para selfie e Microfone autorizado para comandos por voz)
+    c.header('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(), payment=()');
 
     // 7. Cross-Origin Opener Policy (COOP) — isolamento de contexto de janela
     c.header('Cross-Origin-Opener-Policy', 'same-origin');

@@ -102,6 +102,104 @@ adminBillingApp.put('/products/:id', async (c) => {
   return c.json({ ok: true, id: productId });
 });
 
+const createProductSchema = z.object({
+  code: z.string().min(2).max(50),
+  kind: z.enum(['single_edit', 'credit_pack']).default('credit_pack'),
+  name: z.string().min(2).max(100),
+  description: z.string().optional(),
+  priceCents: z.number().int().positive(),
+  credits: z.number().int().positive(),
+  creditValidityDays: z.number().int().positive().nullable().optional(),
+  active: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+});
+
+adminBillingApp.post('/products', async (c) => {
+  const admin = c.get('user');
+  const body = await parseJson(c, createProductSchema);
+  const db = c.env.DB;
+
+  const productId = newId();
+  const now = nowIso();
+  const cleanCode = body.code.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '_');
+
+  await db
+    .prepare(
+      `INSERT INTO products (id, code, kind, name, description, credits, price_cents, credit_validity_days, active, sort_order, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      productId,
+      cleanCode,
+      body.kind,
+      body.name.trim(),
+      body.description?.trim() ?? null,
+      body.credits,
+      body.priceCents,
+      body.creditValidityDays ?? 365,
+      body.active ? 1 : 0,
+      body.sortOrder,
+      now,
+      admin.id
+    )
+    .run();
+
+  await audit(c.env, {
+    actorUserId: admin.id,
+    actorType: 'admin',
+    action: 'admin.products.create',
+    targetType: 'product',
+    targetId: productId,
+    metadata: { code: cleanCode, priceCents: body.priceCents, credits: body.credits },
+  });
+
+  return c.json({
+    ok: true,
+    product: {
+      id: productId,
+      code: cleanCode,
+      kind: body.kind,
+      name: body.name.trim(),
+      description: body.description?.trim() ?? null,
+      credits: body.credits,
+      price_cents: body.priceCents,
+      credit_validity_days: body.creditValidityDays ?? 365,
+      active: body.active ? 1 : 0,
+      sort_order: body.sortOrder,
+      updated_at: now,
+      updated_by: admin.id,
+    },
+  }, 201);
+});
+
+adminBillingApp.delete('/products/:id', async (c) => {
+  const admin = c.get('user');
+  const productId = c.req.param('id');
+  const db = c.env.DB;
+
+  const current = await db
+    .prepare('SELECT id, code, name FROM products WHERE id = ?')
+    .bind(productId)
+    .first<{ id: string; code: string; name: string }>();
+
+  if (!current) {
+    throw new DomainError('PRODUCT_NOT_FOUND', 'Produto não encontrado.', 404);
+  }
+
+  await db.prepare('DELETE FROM products WHERE id = ?').bind(productId).run();
+
+  await audit(c.env, {
+    actorUserId: admin.id,
+    actorType: 'admin',
+    action: 'admin.products.delete',
+    targetType: 'product',
+    targetId: productId,
+    metadata: { code: current.code, name: current.name },
+  });
+
+  return c.json({ ok: true, id: productId, message: 'Pacote de créditos excluído com sucesso.' });
+});
+
 // ───────────────────────────── Gestão de Planos ─────────────────────────────
 adminBillingApp.get('/plans', async (c) => {
   const db = c.env.DB;

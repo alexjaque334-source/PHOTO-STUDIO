@@ -13,6 +13,7 @@ import {
   Checkbox,
   Alert,
   ThemeToggle,
+  LegalModal,
 } from '@/design-system';
 import { UserPlus, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -31,6 +32,8 @@ export const RegisterPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [registeredSuccess, setRegisteredSuccess] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
 
   // Cálculo visual simples de força da senha
   const passwordLengthValid = password.length >= 10;
@@ -194,7 +197,22 @@ export const RegisterPage: React.FC = () => {
                       checked={acceptTerms}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
                       id="acceptTerms"
-                      label="Concordo com os Termos de Serviço"
+                      label={
+                        <span>
+                          Concordo com os{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setLegalModalTab('terms');
+                              setLegalModalOpen(true);
+                            }}
+                            className="text-primary hover:underline font-semibold"
+                          >
+                            Termos de Uso
+                          </button>
+                        </span>
+                      }
                       description="Regras de utilização, validade de créditos e SLA do estúdio."
                       required
                     />
@@ -205,7 +223,22 @@ export const RegisterPage: React.FC = () => {
                       checked={acceptPrivacy}
                       onChange={(e) => setAcceptPrivacy(e.target.checked)}
                       id="acceptPrivacy"
-                      label="Declaro ciência da Política de Privacidade LGPD"
+                      label={
+                        <span>
+                          Declaro ciência da{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setLegalModalTab('privacy');
+                              setLegalModalOpen(true);
+                            }}
+                            className="text-primary hover:underline font-semibold"
+                          >
+                            Política de Privacidade (LGPD)
+                          </button>
+                        </span>
+                      }
                       description="Suas fotos nunca são compartilhadas ou utilizadas para treinamento público."
                       required
                     />
@@ -235,6 +268,11 @@ export const RegisterPage: React.FC = () => {
           )}
         </Card>
       </div>
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
     </div>
   );
 };

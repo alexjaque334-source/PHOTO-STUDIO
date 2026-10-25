@@ -10,6 +10,7 @@ import { errorHandler, requestId } from './lib/http';
 // Segurança (Subagente Segurança/LGPD)
 import { securityHeaders } from './security/headers';
 import { csrfProtection } from './security/csrf';
+import { rateLimitMiddleware } from './security/rate-limit';
 import { ensureDatabaseSchema } from './db/auto-migrate';
 
 // Backend
@@ -37,9 +38,40 @@ import adminAiRoutes from './routes/admin-ai';
 
 const app = new Hono<AppContext>();
 
+// 1. Identificador de Requisição e Cabeçalhos de Segurança Globais (API + SPA)
 app.use('*', requestId());
-app.use('/api/*', securityHeaders());
-app.use('/api/*', csrfProtection()); // isenta /api/webhooks/* (autenticação por token)
+app.use('*', securityHeaders());
+
+// 2. Bloqueio Imediato de Acesso a Arquivos Sensíveis, Código Fonte e Bundles Internos
+app.use('*', async (c, next) => {
+  const p = c.req.path.toLowerCase();
+  if (
+    p === '/_worker.js' ||
+    p === '/_routes.json' ||
+    p === '/.assetsignore' ||
+    p.startsWith('/.') ||
+    p.includes('/.env') ||
+    p.includes('/.git') ||
+    p.includes('/.wrangler') ||
+    /\.(ts|tsx|map|sql)$/i.test(p)
+  ) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Acesso restrito.' } }, 403);
+  }
+  await next();
+});
+
+// 3. Proteção CSRF na API (isenta webhooks do Asaas autenticados via token)
+app.use('/api/*', csrfProtection());
+
+// 4. Rate Limiting Perimetral contra Ataques Massivos e Força Bruta
+app.use('/api/auth/login', rateLimitMiddleware({ limit: 10, windowSeconds: 300, keyPrefix: 'rl:auth:login' }));
+app.use('/api/auth/register', rateLimitMiddleware({ limit: 5, windowSeconds: 300, keyPrefix: 'rl:auth:reg' }));
+app.use('/api/auth/forgot-password', rateLimitMiddleware({ limit: 5, windowSeconds: 300, keyPrefix: 'rl:auth:forgot' }));
+app.use('/api/edits/quote', rateLimitMiddleware({ limit: 30, windowSeconds: 60, keyPrefix: 'rl:edits:quote' }));
+app.use('/api/edits/interpret', rateLimitMiddleware({ limit: 30, windowSeconds: 60, keyPrefix: 'rl:edits:nlu' }));
+app.use('/api/*', rateLimitMiddleware({ limit: 120, windowSeconds: 60, keyPrefix: 'rl:api:global' }));
+
+// 5. Auto-Migração Segura do D1
 app.use('/api/*', async (c, next) => {
   if (c.env.DB) {
     await ensureDatabaseSchema(c.env);
@@ -47,7 +79,7 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-app.get('/api/health', (c) => c.json({ ok: true, env: c.env.ENVIRONMENT }));
+app.get('/api/health', (c) => c.json({ ok: true, status: 'healthy' }));
 
 app.route('/api/auth', authRoutes);
 app.route('/api/account', accountRoutes);
@@ -62,6 +94,7 @@ app.route('/api/billing', billingRoutes);
 app.route('/api/webhooks', webhookRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/admin', adminBillingRoutes);
+app.route('/api/admin/billing', adminBillingRoutes);
 app.route('/api/admin', adminAiRoutes);
 
 app.notFound((c) =>

@@ -2,29 +2,121 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Photo Studio AI — Edição de Fotos com Inteligência Artificial</title>
+    <title>Photo Studio AI — Edição Profissional de Fotos com Inteligência Artificial</title>
     <meta
       name="description"
-      content="Plataforma de alta precisão para aprimoramento de fotos, remoção de fundo, iluminação de estúdio e restauração com inteligência artificial profissional."
+      content="Edite fotos com inteligência artificial apenas escrevendo em português simples. Ensaios profissionais, troca de roupas, remoção de fundo e restauração sem complicação."
     />
-    <meta name="keywords" content="inteligência artificial, edição de fotos, remoção de fundo, fotografia de produtos, estúdio de IA, photo studio ai" />
+    <meta name="keywords" content="inteligência artificial, edição de fotos, ensaio fotográfico de estúdio, remoção de fundo, fotografia corporativa linkedin, restauração de fotos antigas, photo studio ai" />
     <meta name="author" content="Photo Studio AI" />
     <meta name="theme-color" content="#090B10" />
 
-    <!-- Open Graph / Meta Compartilhamento -->
+    <!-- Canonical e Hreflang -->
+    <link rel="canonical" href="https://photostudio.ai/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/" />
+    <link rel="alternate" hreflang="x-default" href="https://photostudio.ai/" />
+
+    <!-- Open Graph / Redes Sociais -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Photo Studio AI" />
+    <meta property="og:url" content="https://photostudio.ai/" />
+    <meta property="og:site_name" content="Photo Studio AI" />
+    <meta property="og:title" content="Photo Studio AI — Edição Profissional de Fotos com IA" />
     <meta
       property="og:description"
-      content="Edição profissional de fotos e estúdio inteligente de inteligência artificial."
+      content="Edição profissional de fotos via comandos simples em português. 70 comandos inteligentes, ensaios de estúdio, troca de cenários e restauração com segurança e LGPD."
     />
+    <meta property="og:image" content="https://photostudio.ai/favicon.svg" />
     <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Photo Studio AI — Edição Profissional de Fotos com IA" />
+    <meta
+      name="twitter:description"
+      content="Edite suas fotos como em um estúdio profissional apenas escrevendo o que deseja em português."
+    />
+    <meta name="twitter:image" content="https://photostudio.ai/favicon.svg" />
 
     <!-- Preconnect fontes do sistema -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Schema.org JSON-LD para Google, Perplexity e Bing -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://photostudio.ai/#webapp",
+          "name": "Photo Studio AI",
+          "url": "https://photostudio.ai",
+          "applicationCategory": "MultimediaApplication",
+          "operatingSystem": "All modern browsers (Web, iOS, Android)",
+          "offers": {
+            "@type": "Offer",
+            "price": "9.90",
+            "priceCurrency": "BRL",
+            "availability": "https://schema.org/InStock"
+          },
+          "featureList": [
+            "Edição fotográfica por linguagem natural em português",
+            "Motor inteligente com 70 comandos fotográficos",
+            "Ensaios profissionais de estúdio, corporativo e debutante",
+            "Restauração e colorização de fotos antigas",
+            "Retenção segura de 90 dias com Zero Data Retention para treino de IA",
+            "Total conformidade com a LGPD (Lei 13.709/2018)"
+          ],
+          "browserRequirements": "Requires JavaScript. Requires HTML5."
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://photostudio.ai/#organization",
+          "name": "Photo Studio AI",
+          "url": "https://photostudio.ai",
+          "logo": "https://photostudio.ai/favicon.svg",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Support & DPO/Encarregado LGPD",
+            "email": "privacidade@photostudio.ai",
+            "availableLanguage": ["Portuguese", "English"]
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://photostudio.ai/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Preciso entender de inteligência artificial ou prompts em inglês para usar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Não. O Photo Studio AI foi feito para pessoas comuns. Você só envia a foto e escreve em português coloquial o que quer mudar, como 'tira o fundo' ou 'me coloca num estúdio profissional'."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Minhas fotos são usadas para treinar modelos de inteligência artificial?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Não. Garantimos política estrita de Zero Data Retention (ZDR). Suas fotos nunca são compartilhadas nem utilizadas para treinamento de inteligência artificial de terceiros."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Por quanto tempo minhas fotos ficam salvas na plataforma?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Seus arquivos originais e gerados contam com retenção segura de 90 dias no Cloudflare R2 privado. Após esse período ou caso você solicite exclusão imediata, os arquivos são fisicamente destruídos."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
     <div id="root"></div>

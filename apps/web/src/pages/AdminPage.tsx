@@ -136,6 +136,72 @@ export const AdminPage: React.FC = () => {
   const [planToDelete, setPlanToDelete] = useState<any | null>(null);
   const [isDeletingPlan, setIsDeletingPlan] = useState(false);
 
+  // ── 2.1 Sub-aba de Catálogo de Cobrança ('plans' | 'products') ──
+  const [billingCatalogTab, setBillingCatalogTab] = useState<'plans' | 'products'>('plans');
+
+  // Pacotes de Créditos Avulsos (Produtos)
+  const [productsList, setProductsList] = useState<any[]>([
+    {
+      id: '0192a000-0000-7000-8000-000000000001',
+      code: 'single_edit',
+      kind: 'single_edit',
+      name: 'Edição Avulsa',
+      description: '1 crédito para realizar 1 edição com inteligência artificial profissional.',
+      credits: 1,
+      price_cents: 790,
+      credit_validity_days: 30,
+      active: 1,
+    },
+    {
+      id: '0192a000-0000-7000-8000-000000000002',
+      code: 'pack_inicial',
+      kind: 'credit_pack',
+      name: 'Pacote Inicial',
+      description: '5 créditos de edição em alta resolução válidos por 12 meses.',
+      credits: 5,
+      price_cents: 1990,
+      credit_validity_days: 365,
+      active: 1,
+    },
+    {
+      id: '0192a000-0000-7000-8000-000000000003',
+      code: 'pack_criador',
+      kind: 'credit_pack',
+      name: 'Pacote Criador',
+      description: '12 créditos de edição perfeitos para criadores de conteúdo e anúncios.',
+      credits: 12,
+      price_cents: 3990,
+      credit_validity_days: 365,
+      active: 1,
+    },
+    {
+      id: '0192a000-0000-7000-8000-000000000004',
+      code: 'pack_profissional',
+      kind: 'credit_pack',
+      name: 'Pacote Profissional',
+      description: '20 créditos de edição para profissionais com melhor custo por imagem.',
+      credits: 20,
+      price_cents: 5990,
+      credit_validity_days: 365,
+      active: 1,
+    },
+  ]);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isCreatingProductOpen, setIsCreatingProductOpen] = useState(false);
+  const [newProductData, setNewProductData] = useState({
+    code: '',
+    kind: 'credit_pack',
+    name: '',
+    description: '',
+    price_cents: 1990,
+    credits: 5,
+    credit_validity_days: 365,
+  });
+  const [isSavingNewProduct, setIsSavingNewProduct] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<any | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+
   // ── 3. Feedbacks dos Assinantes ──
   const [feedbacks, setFeedbacks] = useState<any[]>([
     {
@@ -357,6 +423,17 @@ export const AdminPage: React.FC = () => {
         if (!isMounted) return;
         if (res?.items && res.items.length > 0) {
           setPlansList(res.items);
+        }
+      })
+      .catch(() => {});
+
+    // Pacotes de Créditos Avulsos (Produtos) do backend
+    api.admin
+      .getProducts()
+      .then((res: any) => {
+        if (!isMounted) return;
+        if (res?.items && res.items.length > 0) {
+          setProductsList(res.items);
         }
       })
       .catch(() => {});
@@ -586,6 +663,103 @@ export const AdminPage: React.FC = () => {
       error(err.message || 'Falha ao excluir plano.', 'Erro');
     } finally {
       setIsDeletingPlan(false);
+    }
+  };
+
+  // Salvar Alteração de Pacote Avulso
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    setIsSavingProduct(true);
+    try {
+      await api.admin.updateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        priceCents: parseInt(String(editingProduct.price_cents), 10),
+        credits: parseInt(String(editingProduct.credits), 10),
+        creditValidityDays: editingProduct.credit_validity_days ? parseInt(String(editingProduct.credit_validity_days), 10) : null,
+        active: Boolean(editingProduct.active),
+      });
+
+      setProductsList((prev) =>
+        prev.map((p) => (p.id === editingProduct.id ? { ...editingProduct } : p))
+      );
+      success('Pacote atualizado! Reflete imediatamente na Landing Page, no Checkout e na Conta.', 'Pacote Salvo');
+      setEditingProduct(null);
+    } catch (err: any) {
+      error(err.message || 'Falha ao atualizar pacote.', 'Erro');
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  // Criar Novo Pacote Avulso
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProductData.name.trim() || !newProductData.code.trim()) {
+      error('Preencha o nome e o código do pacote.', 'Campos Obrigatórios');
+      return;
+    }
+
+    setIsSavingNewProduct(true);
+    try {
+      const res = await api.admin.createProduct({
+        code: newProductData.code.trim().toLowerCase(),
+        kind: newProductData.kind as any,
+        name: newProductData.name.trim(),
+        description: newProductData.description.trim(),
+        priceCents: parseInt(String(newProductData.price_cents), 10),
+        credits: parseInt(String(newProductData.credits), 10),
+        creditValidityDays: parseInt(String(newProductData.credit_validity_days), 10),
+        active: true,
+      });
+
+      const created = res.product || {
+        id: `prod_${Date.now()}`,
+        code: newProductData.code.trim().toLowerCase(),
+        kind: newProductData.kind,
+        name: newProductData.name.trim(),
+        description: newProductData.description.trim(),
+        price_cents: parseInt(String(newProductData.price_cents), 10),
+        credits: parseInt(String(newProductData.credits), 10),
+        credit_validity_days: parseInt(String(newProductData.credit_validity_days), 10),
+        active: 1,
+      };
+
+      setProductsList((prev) => [...prev, created]);
+      success('Novo pacote criado! Sincronizado na Landing Page, Checkout e Painel do Cliente.', 'Pacote Criado');
+      setIsCreatingProductOpen(false);
+      setNewProductData({
+        code: '',
+        kind: 'credit_pack',
+        name: '',
+        description: '',
+        price_cents: 1990,
+        credits: 5,
+        credit_validity_days: 365,
+      });
+    } catch (err: any) {
+      error(err.message || 'Falha ao criar pacote.', 'Erro');
+    } finally {
+      setIsSavingNewProduct(false);
+    }
+  };
+
+  // Excluir Pacote Avulso
+  const handleDeleteProductConfirm = async () => {
+    if (!productToDelete) return;
+
+    setIsDeletingProduct(true);
+    try {
+      await api.admin.deleteProduct(productToDelete.id);
+      setProductsList((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      success(`Pacote "${productToDelete.name}" foi removido do catálogo e da Landing Page.`, 'Pacote Excluído');
+      setProductToDelete(null);
+    } catch (err: any) {
+      error(err.message || 'Falha ao excluir pacote.', 'Erro');
+    } finally {
+      setIsDeletingProduct(false);
     }
   };
 
@@ -987,92 +1161,213 @@ export const AdminPage: React.FC = () => {
         </TabContent>
 
         {/* ════════════════════════════════════════════════════════════════
-            ABA 3: PLANOS & PRECIFICAÇÃO (DINÂMICO COM LANDING PAGE)
+            ABA 3: PLANOS & PACOTES DE CRÉDITOS (DINÂMICO COM SITE E CLIENTE)
         ════════════════════════════════════════════════════════════════ */}
         <TabContent value="plans" className="space-y-6 pt-4">
-          <Card className="border-border/80">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  Gerenciador de Planos & Preços
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Crie, edite ou remova planos. <strong>Todas as mudanças refletem imediatamente na Landing Page e no Checkout Asaas!</strong>
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="success" size="sm" className="hidden sm:flex items-center gap-1">
-                  <Check className="h-3.5 w-3.5" /> Sincronizado com Landing Page
-                </Badge>
+          {/* Alternador de Sub-Aba: Assinaturas vs Pacotes Avulsos */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-border/70">
+            <div className="p-1 rounded-xl bg-secondary/80 border border-border inline-flex gap-1">
+              <button
+                type="button"
+                onClick={() => setBillingCatalogTab('plans')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all select-none flex items-center gap-2 ${
+                  billingCatalogTab === 'plans'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <CreditCard className="h-3.5 w-3.5" />
+                Assinaturas Mensais Recorrentes ({plansList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCatalogTab('products')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all select-none flex items-center gap-2 ${
+                  billingCatalogTab === 'products'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Coins className="h-3.5 w-3.5" />
+                Pacotes de Créditos Avulsos ({productsList.length})
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Badge variant="success" size="sm" className="hidden sm:flex items-center gap-1">
+                <Check className="h-3.5 w-3.5" /> Sincronizado nas 3 Telas
+              </Badge>
+              {billingCatalogTab === 'plans' ? (
                 <Button
                   variant="gold"
                   size="sm"
                   leftIcon={<Plus className="h-4 w-4" />}
                   onClick={() => setIsCreatingPlanOpen(true)}
                 >
-                  Novo Plano
+                  Novo Plano Mensal
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plansList.map((plan) => (
-                  <Card key={plan.id} className="border-border/70 flex flex-col justify-between hover:border-primary/50 transition-colors">
-                    <CardHeader>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-[11px] text-muted-foreground uppercase">{plan.code}</span>
-                        {plan.active ? (
-                          <Badge variant="success" size="sm">Ativo</Badge>
-                        ) : (
-                          <Badge variant="secondary" size="sm">Inativo</Badge>
-                        )}
-                      </div>
-                      <CardTitle className="text-base">{plan.name}</CardTitle>
-                      <CardDescription className="text-xs line-clamp-2">{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Preço Mensal:</span>
-                        <span className="text-base font-extrabold text-foreground font-mono">
-                          {((plan.price_cents ?? 0) / 100).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
-                        </span>
-                      </div>
-                      <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Créditos Inclusos:</span>
-                        <span className="text-sm font-bold text-amber-500 font-mono">
-                          {plan.monthly_credits} créditos
-                        </span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="pt-2 flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        leftIcon={<Sliders className="h-3.5 w-3.5" />}
-                        onClick={() => setEditingPlan({ ...plan })}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                        leftIcon={<Trash2 className="h-3.5 w-3.5" />}
-                        onClick={() => setPlanToDelete(plan)}
-                      >
-                        Excluir
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              ) : (
+                <Button
+                  variant="gold"
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => setIsCreatingProductOpen(true)}
+                >
+                  Novo Pacote Avulso
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {billingCatalogTab === 'plans' ? (
+            <Card className="border-border/80">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Gerenciador de Planos de Assinatura Mensal
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Crie, edite ou remova planos recorrentes. <strong>Reflete imediatamente na Landing Page, no Checkout Asaas e na tela do usuário!</strong>
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {plansList.map((plan) => (
+                    <Card key={plan.id} className="border-border/70 flex flex-col justify-between hover:border-primary/50 transition-colors">
+                      <CardHeader>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-[11px] text-muted-foreground uppercase">{plan.code}</span>
+                          {plan.active ? (
+                            <Badge variant="success" size="sm">Ativo</Badge>
+                          ) : (
+                            <Badge variant="secondary" size="sm">Inativo</Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-base">{plan.name}</CardTitle>
+                        <CardDescription className="text-xs line-clamp-2">{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Preço Mensal:</span>
+                          <span className="text-base font-extrabold text-foreground font-mono">
+                            {((plan.price_cents ?? 0) / 100).toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            })}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Créditos Inclusos:</span>
+                          <span className="text-sm font-bold text-amber-500 font-mono">
+                            {plan.monthly_credits} créditos
+                          </span>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="pt-2 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          leftIcon={<Sliders className="h-3.5 w-3.5" />}
+                          onClick={() => setEditingPlan({ ...plan })}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                          onClick={() => setPlanToDelete(plan)}
+                        >
+                          Excluir
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border/80">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-amber-500" />
+                    Gerenciador de Pacotes de Créditos Avulsos (Sem Mensalidade)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Crie, edite ou remova pacotes avulsos. <strong>Disponível na Landing Page, no Checkout e no Painel do Usuário!</strong>
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {productsList.map((prod) => (
+                    <Card key={prod.id || prod.code} className="border-border/70 flex flex-col justify-between hover:border-amber-500/50 transition-colors">
+                      <CardHeader>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-[11px] text-muted-foreground uppercase">{prod.code}</span>
+                          {prod.active ? (
+                            <Badge variant="success" size="sm">Ativo</Badge>
+                          ) : (
+                            <Badge variant="secondary" size="sm">Inativo</Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-base">{prod.name}</CardTitle>
+                        <CardDescription className="text-xs line-clamp-2">{prod.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Preço Único:</span>
+                          <span className="text-base font-extrabold text-foreground font-mono">
+                            {((prod.price_cents ?? 0) / 100).toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            })}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Créditos:</span>
+                          <span className="text-sm font-bold text-amber-500 font-mono">
+                            {prod.credits} {prod.credits === 1 ? 'crédito' : 'créditos'}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-secondary/30 text-[11px] text-muted-foreground flex items-center justify-between">
+                          <span>Validade:</span>
+                          <span className="font-semibold text-foreground">
+                            {prod.credit_validity_days ? `${prod.credit_validity_days} dias` : 'Indeterminada'}
+                          </span>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="pt-2 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          leftIcon={<Sliders className="h-3.5 w-3.5" />}
+                          onClick={() => setEditingProduct({ ...prod })}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                          onClick={() => setProductToDelete(prod)}
+                        >
+                          Excluir
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabContent>
 
         {/* ════════════════════════════════════════════════════════════════
@@ -1757,6 +2052,192 @@ export const AdminPage: React.FC = () => {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ── Modal de Edição de Pacote Avulso ── */}
+      {editingProduct && (
+        <Modal
+          isOpen={true}
+          onClose={() => setEditingProduct(null)}
+          title={`Editar ${editingProduct.name}`}
+          size="md"
+        >
+          <form onSubmit={handleSaveProduct} className="space-y-4">
+            <Input
+              label="Nome do Pacote"
+              value={editingProduct.name}
+              onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+              required
+            />
+            <Input
+              label="Preço em Centavos (ex: 1990 = R$ 19,90)"
+              type="number"
+              value={editingProduct.price_cents}
+              onChange={(e) => setEditingProduct({ ...editingProduct, price_cents: parseInt(e.target.value, 10) || 0 })}
+              helperText={`Equivale a R$ ${((editingProduct.price_cents || 0) / 100).toFixed(2).replace('.', ',')}`}
+              required
+            />
+            <Input
+              label="Quantidade de Créditos"
+              type="number"
+              min="1"
+              value={editingProduct.credits}
+              onChange={(e) => setEditingProduct({ ...editingProduct, credits: parseInt(e.target.value, 10) || 1 })}
+              required
+            />
+            <Input
+              label="Validade dos Créditos em Dias"
+              type="number"
+              min="1"
+              value={editingProduct.credit_validity_days || 365}
+              onChange={(e) => setEditingProduct({ ...editingProduct, credit_validity_days: parseInt(e.target.value, 10) || null })}
+              helperText="Tempo máximo que o usuário tem para gastar os créditos após a compra"
+              required
+            />
+            <Input
+              label="Descrição do Pacote"
+              value={editingProduct.description || ''}
+              onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" size="sm" type="button" onClick={() => setEditingProduct(null)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" size="sm" type="submit" isLoading={isSavingProduct}>
+                Salvar e Sincronizar Tudo
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Modal de Criação de Novo Pacote Avulso ── */}
+      {isCreatingProductOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsCreatingProductOpen(false)}
+          title="Criar Novo Pacote de Créditos Avulso"
+          size="md"
+        >
+          <form onSubmit={handleCreateProduct} className="space-y-4">
+            <Input
+              label="Nome do Pacote"
+              placeholder="Ex: Pacote Super Turbo"
+              value={newProductData.name}
+              onChange={(e) => {
+                const name = e.target.value;
+                const codeAuto = name
+                  .toLowerCase()
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/[^a-z0-9]/g, '_');
+                setNewProductData({
+                  ...newProductData,
+                  name,
+                  code: newProductData.code ? newProductData.code : codeAuto,
+                });
+              }}
+              required
+            />
+
+            <Input
+              label="Código Identificador (URL/Banco)"
+              placeholder="Ex: pack_turbo"
+              value={newProductData.code}
+              onChange={(e) => setNewProductData({ ...newProductData, code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '_') })}
+              helperText="Identificador do produto para o sistema e gateway Asaas"
+              required
+            />
+
+            <Select
+              label="Tipo de Produto"
+              value={newProductData.kind}
+              onChange={(e) => setNewProductData({ ...newProductData, kind: e.target.value })}
+              options={[
+                { value: 'credit_pack', label: 'Pacote de Créditos Avulso' },
+                { value: 'single_edit', label: 'Edição Individual Avulsa (1 foto)' },
+              ]}
+            />
+
+            <Input
+              label="Preço em Centavos (ex: 2990 = R$ 29,90)"
+              type="number"
+              min="100"
+              value={newProductData.price_cents}
+              onChange={(e) => setNewProductData({ ...newProductData, price_cents: parseInt(e.target.value, 10) || 0 })}
+              helperText={`Equivale a R$ ${((newProductData.price_cents || 0) / 100).toFixed(2).replace('.', ',')}`}
+              required
+            />
+
+            <Input
+              label="Quantidade de Créditos Inclusos"
+              type="number"
+              min="1"
+              value={newProductData.credits}
+              onChange={(e) => setNewProductData({ ...newProductData, credits: parseInt(e.target.value, 10) || 1 })}
+              required
+            />
+
+            <Input
+              label="Validade em Dias"
+              type="number"
+              min="1"
+              value={newProductData.credit_validity_days}
+              onChange={(e) => setNewProductData({ ...newProductData, credit_validity_days: parseInt(e.target.value, 10) || 365 })}
+              helperText="Ex: 30 para avulso, 365 para pacotes anuais"
+              required
+            />
+
+            <Input
+              label="Descrição Resumida"
+              placeholder="Ex: 10 créditos de alta precisão válidos por 12 meses."
+              value={newProductData.description}
+              onChange={(e) => setNewProductData({ ...newProductData, description: e.target.value })}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" size="sm" type="button" onClick={() => setIsCreatingProductOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="gold" size="sm" type="submit" isLoading={isSavingNewProduct}>
+                Criar e Publicar Pacote
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Modal de Confirmação de Exclusão de Pacote Avulso ── */}
+      {productToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => setProductToDelete(null)}
+          title="Excluir Pacote de Créditos?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Tem certeza que deseja apagar permanentemente o pacote{' '}
+              <strong className="text-foreground">{productToDelete.name}</strong>?
+              Ele será removido imediatamente da Landing Page, do Checkout e do Painel do Usuário.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setProductToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={isDeletingProduct}
+                onClick={handleDeleteProductConfirm}
+              >
+                Sim, Excluir Pacote
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
 

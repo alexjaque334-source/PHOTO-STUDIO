@@ -12,6 +12,7 @@ import {
   CardContent,
   BeforeAfterSlider,
   PriceCard,
+  LegalModal,
 } from '@/design-system';
 import {
   Sparkles,
@@ -29,6 +30,8 @@ import {
   Lock,
   Camera,
   Coins,
+  FileText,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api-client';
@@ -37,6 +40,9 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
+  const [pricingTab, setPricingTab] = useState<'packs' | 'plans'>('packs');
 
   const [livePlans, setLivePlans] = useState<any[]>([]);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
@@ -141,6 +147,20 @@ export const LandingPage: React.FC = () => {
               <a href="#seguranca" className="hover:text-foreground transition-colors">
                 Segurança LGPD
               </a>
+              <button
+                type="button"
+                onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}
+                className="hover:text-foreground transition-colors"
+              >
+                Termos
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}
+                className="hover:text-foreground transition-colors"
+              >
+                Privacidade
+              </button>
             </nav>
           </div>
 
@@ -173,6 +193,8 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      <main id="main-content" className="flex-1">
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 border-b border-border/60">
@@ -380,10 +402,10 @@ export const LandingPage: React.FC = () => {
               <div className="p-4 rounded-xl bg-background/80 border border-border/60 space-y-1">
                 <span className="font-bold text-foreground flex items-center gap-2">
                   <Lock className="h-3.5 w-3.5 text-primary" />
-                  Direito de Exclusão e Exportação
+                  Direito de Exclusão Definitiva
                 </span>
                 <p className="text-muted-foreground leading-relaxed">
-                  Exporte todo o seu histórico de dados em JSON a qualquer instante ou solicite exclusão imediata definitiva da conta e arquivos.
+                  Exclusão imediata da sua conta sob demanda ou expurgo físico automático dos seus arquivos de imagem após 90 dias de retenção segura.
                 </p>
               </div>
 
@@ -396,6 +418,34 @@ export const LandingPage: React.FC = () => {
                   Nenhum dado de cartão de crédito passa pelos nossos servidores. Todo o pagamento é intermediado de forma segura pelo Asaas.
                 </p>
               </div>
+            </div>
+
+            {/* Acesso direto aos Termos e Privacidade na Landing Page */}
+            <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 border-t border-border/40">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setLegalModalTab('privacy');
+                  setLegalModalOpen(true);
+                }}
+                className="gap-2 text-xs"
+              >
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                Ler Política de Privacidade LGPD Completa
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setLegalModalTab('terms');
+                  setLegalModalOpen(true);
+                }}
+                className="gap-2 text-xs"
+              >
+                <FileText className="w-3.5 h-3.5 text-primary" />
+                Ler Termos de Uso do Serviço
+              </Button>
             </div>
           </div>
         </div>
@@ -415,8 +465,116 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Grade Dinâmica de Planos do Catálogo */}
+          {/* Alternador de Catálogo: Pacotes Avulsos vs Assinaturas Mensais */}
+          <div className="flex justify-center">
+            <div className="p-1 rounded-xl bg-secondary/80 border border-border inline-flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPricingTab('packs')}
+                className={`px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center gap-2 ${
+                  pricingTab === 'packs'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Coins className="h-3.5 w-3.5" />
+                Pacotes de Créditos Avulsos (Sem mensalidade)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPricingTab('plans')}
+                className={`px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center gap-2 ${
+                  pricingTab === 'plans'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Layers className="h-3.5 w-3.5" />
+                Assinaturas Mensais Recorrentes
+              </button>
+            </div>
+          </div>
+
+          {/* Grade Dinâmica de Preços (Pacotes Avulsos ou Assinaturas Mensais) */}
           {(() => {
+            if (pricingTab === 'packs') {
+              const fallbackProducts = [
+                {
+                  code: 'single_edit',
+                  name: 'Edição Avulsa',
+                  description: '1 crédito para realizar 1 edição com inteligência artificial profissional.',
+                  credits: 1,
+                  price_cents: 790,
+                  credit_validity_days: 30,
+                },
+                {
+                  code: 'pack_inicial',
+                  name: 'Pacote Inicial',
+                  description: '5 créditos de edição em alta resolução válidos por 12 meses.',
+                  credits: 5,
+                  price_cents: 1990,
+                  credit_validity_days: 365,
+                },
+                {
+                  code: 'pack_criador',
+                  name: 'Pacote Criador',
+                  description: '12 créditos perfeitos para criadores de conteúdo e fotos profissionais.',
+                  credits: 12,
+                  price_cents: 3990,
+                  credit_validity_days: 365,
+                },
+                {
+                  code: 'pack_profissional',
+                  name: 'Pacote Profissional',
+                  description: '20 créditos para profissionais e marcas com o melhor custo por foto.',
+                  credits: 20,
+                  price_cents: 5990,
+                  credit_validity_days: 365,
+                },
+              ];
+
+              const activeProducts = liveProducts && liveProducts.length > 0 ? liveProducts : fallbackProducts;
+              const gridCols =
+                activeProducts.length <= 2
+                  ? 'grid-cols-1 md:grid-cols-2 max-w-3xl'
+                  : activeProducts.length === 3
+                  ? 'grid-cols-1 md:grid-cols-3 max-w-5xl'
+                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl';
+
+              return (
+                <div className={`grid ${gridCols} gap-6 mx-auto`}>
+                  {activeProducts.map((prod: any) => {
+                    const priceCents = prod.price_cents ?? prod.priceCents ?? 0;
+                    const credits = prod.credits ?? 1;
+                    const validity = prod.credit_validity_days ?? prod.creditValidityDays ?? 365;
+                    const isPopular = prod.code === 'pack_criador' || prod.code === 'pack_popular';
+
+                    return (
+                      <PriceCard
+                        key={prod.id || prod.code}
+                        name={prod.name}
+                        description={prod.description || 'Pacote avulso de créditos para edição com IA.'}
+                        priceFormatted={`R$ ${(priceCents / 100).toFixed(2).replace('.', ',')}`}
+                        periodLabel="pagamento único"
+                        creditsLabel={`${credits} ${credits === 1 ? 'Crédito' : 'Créditos'}`}
+                        isPopular={isPopular}
+                        features={[
+                          `${credits} ${credits === 1 ? 'edição fotográfica' : 'edições fotográficas'} com IA`,
+                          `Validade de ${validity} dias`,
+                          'Sem mensalidade / Sem renovação automática',
+                          'Acesso a todos os 70 comandos inteligentes',
+                          'Download em PNG, JPG e WebP em alta definição',
+                          'Retenção privativa de 90 dias',
+                        ]}
+                        buttonText={isAuthenticated ? 'Adquirir Créditos' : 'Comprar Agora'}
+                        onSelect={() => navigate(isAuthenticated ? '/pricing' : '/auth/register')}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            }
+
             const fallbackPlans = [
               {
                 id: 'plan_pessoal',
@@ -474,7 +632,7 @@ export const LandingPage: React.FC = () => {
                       isPopular={isPopular}
                       features={[
                         `${credits} créditos renovados todo mês`,
-                        'Acesso completo às 14 ferramentas de IA',
+                        'Acesso completo aos 70 comandos de IA',
                         'Remoção de fundo com IA óptica',
                         'Histórico de versões não-destrutivo',
                         'Downloads em alta resolução (PNG, JPG, WebP)',
@@ -527,6 +685,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border/80 bg-card/60 py-12 text-xs text-muted-foreground">
@@ -545,15 +704,32 @@ export const LandingPage: React.FC = () => {
             <a href="/auth/login" className="hover:text-foreground transition-colors">
               Acessar Studio
             </a>
-            <a href="#seguranca" className="hover:text-foreground transition-colors">
+            <button
+              type="button"
+              onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}
+              className="hover:text-foreground transition-colors"
+            >
+              Termos de Uso
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}
+              className="hover:text-foreground transition-colors"
+            >
               Privacidade LGPD
-            </a>
+            </button>
             <a href="#precos" className="hover:text-foreground transition-colors">
               Preços & Créditos
             </a>
           </div>
         </div>
       </footer>
+
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
     </div>
   );
 };

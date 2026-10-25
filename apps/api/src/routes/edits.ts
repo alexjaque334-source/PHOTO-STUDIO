@@ -20,6 +20,7 @@ import { requireAuth } from '../middleware/auth';
 import { createAiEditService } from '../ai';
 import { createWalletService } from '../wallet';
 import { processSingleEditJob } from '../jobs/edit-consumer';
+import { validatePrompt } from '../security/abuse';
 
 const editRoutes = new Hono<AppContext>();
 
@@ -361,6 +362,11 @@ editRoutes.get('/tools', async (c) => {
 editRoutes.post('/quote', requireAuth(), async (c) => {
   const body = await parseJson(c, QuoteRequestSchema);
   const user = c.get('user');
+  const promptCheck = validatePrompt(body.prompt);
+  if (!promptCheck.allowed) {
+    throw new DomainError('PROMPT_POLICY_VIOLATION', promptCheck.reason || 'Conteúdo não permitido.', 400);
+  }
+
   const now = nowIso();
 
   // Limite de tamanho de prompt
@@ -487,6 +493,11 @@ editRoutes.post('/quote', requireAuth(), async (c) => {
 // POST /edits/interpret - Análise semântica rápida de intenções sem gerar requisição
 editRoutes.post('/interpret', requireAuth(), async (c) => {
   const body = await parseJson(c, InterpretSchema);
+
+  const promptCheck = validatePrompt(body.prompt);
+  if (!promptCheck.allowed) {
+    throw new DomainError('PROMPT_POLICY_VIOLATION', promptCheck.reason || 'Conteúdo não permitido.', 400);
+  }
   const { interpretNaturalLanguage } = await import('../ai/nlu');
   const interpretation = interpretNaturalLanguage(body.prompt);
   return c.json(interpretation);

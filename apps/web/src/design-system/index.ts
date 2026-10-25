@@ -43,3 +43,5 @@ export * from './PageHeader';
 export * from './AppShell';
 export * from './AdminShell';
 export * from './ErrorBoundary';
+
+export * from './LegalModal';

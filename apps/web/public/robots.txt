@@ -1,0 +1,55 @@
+# Robots.txt - Photo Studio AI (https://photostudio.ai)
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /termos
+Allow: /termos-de-uso
+Allow: /privacidade
+Allow: /politica-de-privacidade
+Allow: /auth/login
+Allow: /auth/register
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /studio
+Disallow: /studio/*
+Disallow: /api/
+Disallow: /api/*
+
+# AI Search & Indexing Agents
+User-agent: GPTBot
+Allow: /
+Allow: /pricing
+Allow: /termos
+Allow: /privacidade
+Disallow: /admin
+Disallow: /studio
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /pricing
+Allow: /termos
+Allow: /privacidade
+Disallow: /admin
+Disallow: /studio
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /pricing
+Allow: /termos
+Allow: /privacidade
+Disallow: /admin
+Disallow: /studio
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /pricing
+Allow: /termos
+Allow: /privacidade
+Disallow: /admin
+Disallow: /studio
+Disallow: /api/
+
+Sitemap: https://photostudio.ai/sitemap.xml

@@ -24,6 +24,8 @@ import {
 
 // Páginas
 import { LandingPage } from '@/pages/LandingPage';
+import { TermsPage } from '@/pages/TermsPage';
+import { PrivacyPage } from '@/pages/PrivacyPage';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { RegisterPage } from '@/pages/Auth/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/Auth/ForgotPasswordPage';
@@ -195,6 +197,10 @@ export const App: React.FC = () => {
           <Routes>
             {/* ── Rotas Públicas ── */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/termos" element={<TermsPage />} />
+            <Route path="/termos-de-uso" element={<TermsPage />} />
+            <Route path="/privacidade" element={<PrivacyPage />} />
+            <Route path="/politica-de-privacidade" element={<PrivacyPage />} />
             <Route path="/auth/login" element={<LoginPage />} />
             <Route path="/auth/register" element={<RegisterPage />} />
             <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />

@@ -1,0 +1,29 @@
+# Photo Studio AI - Documentação Completa para Motores de IA (llms-full.txt)
+
+## Visão Geral do Produto
+O Photo Studio AI é um ecossistema SaaS de inteligência artificial generativa projetado especificamente para o público brasileiro. O foco central é a simplicidade absoluta: o usuário não precisa configurar parâmetros difíceis, como guidance scale, negative prompts, seed, samplers ou LoRAs. Todo o controle é interpretado de forma conversacional e traduzido para um pipeline de alta resolução.
+
+## Catálogo de Capacidades e Comandos Internos
+O motor inteligente dispõe de 70 comandos classificados e consolidados:
+- Ensaios de Estúdio, Feminino Editorial, Masculino Cinematográfico, Gestante, Casal, Infantil, Formatura e Retrato Corporativo LinkedIn.
+- Celebrações: Aniversário Infantil, Debutante 15 Anos e Aniversário Adulto Premium.
+- Cenários: Praia Tropical, Montanha Nevada, Pôr do Sol Dourado, Café Europeu, Cidade Cosmopolita, Trilha na Natureza e Academia Fitness.
+- Temáticos e Criativos: Guerreiro Medieval / Épico, Cyberpunk Futurista, Astronauta / Espacial Sci-Fi, Retrô Anos 80/90, Estátua de Mármore Clássica e Pintura a Óleo Renascentista.
+- Ajustes de Imagem Pessoal: Troca de Roupa Feminina / Masculina, Mudança de Penteado, Cor de Cabelo, Maquiagem Suave / Marcante, Ajuste de Silhueta Natural, Remoção de Rugas / Linhas de Expressão, Bronzeado Natural e Clareamento Dental.
+- Efeitos Visuais: Iluminação Lateral Dramática, Neon Noturno, Aura Iluminada, Pirotecnia Controlada, Chuva Suave e Flocos de Neve.
+- Tratamento e Restauração: Restauração de Fotos Danificadas, Colorização Fiel de Fotos Antigas, Super Resolução / Nitidez Ultra HD e Remoção de Elementos / Pessoas Indesejadas.
+- Comercial: Fundo Branco Infinito de E-commerce, Still de Produto com Sombras Naturais e Fotografia Publicitária de Alta Conversão.
+- Expressões Faciais: Adicionar Sorriso Natural, Expressão Serena e Olhar Focado.
+- Edições Fundamentais: Recorte, Redimensionamento, Fundo Transparente, Balanceamento de Cores e Contraste.
+
+## Arquitetura de Segurança, Infraestrutura e LGPD
+1. Zero Data Retention para Treinamento: Todos os endpoints de IA operam sob contratos que vedam expressamente o armazenamento ou uso de imagens de usuários para treinamento contínuo de modelos de base.
+2. Armazenamento Efêmero no Cloudflare R2 Privado: A política de ciclo de vida (TTL) expira e expurga os arquivos fisicamente em no máximo 90 dias.
+3. Direitos dos Titulares (LGPD Art. 18): Exclusão de conta sob demanda, revogação de consentimento, portabilidade e retificação disponíveis via painel e suporte.
+4. Infraestrutura Edge: Backend executado na infraestrutura Cloudflare Workers com isolamento V8 e latência inferior a 30ms em território brasileiro.
+
+## Diretrizes Comerciais e Métodos de Pagamento
+- Faturamento processado via parceiro financeiro regulamentado no BACEN (Asaas).
+- Suporte a PIX com baixa instantânea via Webhook assinado HMAC-SHA256.
+- Cartões de crédito com proteção 3D Secure e tokenização segura.
+- Garantia de estorno automático de créditos em caso de falha técnica no processamento de geração.

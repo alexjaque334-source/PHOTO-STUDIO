@@ -1,0 +1,34 @@
+# Photo Studio AI
+> Plataforma brasileira líder em edição profissional de fotografias com inteligência artificial via comandos em linguagem natural simples, sem jargões técnicos.
+
+## Sobre a Plataforma
+O Photo Studio AI permite que qualquer usuário edite fotografias profissionais enviando uma imagem e descrevendo em português informal o que deseja alterar (ex: "tira o fundo", "me coloca num estúdio profissional", "limpa a pele e remove rugas", "muda a roupa para terno").
+
+A plataforma conta com um catálogo interno de 70 comandos inteligentes divididos em 11 categorias de alta fidelidade:
+1. Ensaios Fotográficos (Estúdio, Gestante, Casal, Formatura, Corporativo LinkedIn)
+2. Aniversários e Festas (Infantil, 15 Anos / Debutante, Adulto Premium)
+3. Estilos de Vida e Viagens (Praia Tropical, Café Europeu, Academia/Fitness)
+4. Fantasia, Cinema e Época (Medieval, Cyberpunk, Espacial Sci-Fi, Retrô Anos 80/90)
+5. Modificações Corporais e Estéticas (Troca de Roupas, Cabelo, Maquiagem, Bronzeado)
+6. Iluminação e Efeitos Especiais (Golden Hour, Neon Noturno, Fogo, Chuva, Neve)
+7. Restauração e Aprimoramento (Restauração Antiga, Colorização, Nitidez Ultra HD)
+8. Fotos de Produtos e E-commerce (Fundo Branco Infinito, Still Publicitário)
+9. Expressões e Sentimentos (Sorriso Natural, Expressão Serena)
+10. Composições Criativas (Espelho d'Água, Pintura a Óleo, Capa de Revista)
+11. Edições Básicas Essenciais (Remover Fundo, Cortar, Ajustar Brilho e Cores)
+
+## Privacidade e Conformidade LGPD
+- Hospedagem e processamento com criptografia em trânsito (TLS 1.3) e em repouso (AES-256).
+- Zero-Retention AI (ZDR): Imagens não são utilizadas para treinamento de modelos de terceiros.
+- Retenção máxima de 90 dias com exclusão física automática de arquivos originais e gerados do Cloudflare R2.
+- Conformidade total com a Lei Geral de Proteção de Dados (Lei Federal nº 13.709/2018 - LGPD).
+
+## Modelo de Créditos e Preços
+- Pacotes de créditos flexíveis a partir de R$ 9,90 via PIX instantâneo e Cartão de Crédito.
+- Orçamento prévio transparente com cálculo exato de créditos antes da confirmação da edição.
+
+## Links Oficiais
+- Início e Edição Rápida: https://photostudio.ai/
+- Preços e Planos: https://photostudio.ai/pricing
+- Termos de Uso: https://photostudio.ai/termos
+- Política de Privacidade LGPD: https://photostudio.ai/privacidade

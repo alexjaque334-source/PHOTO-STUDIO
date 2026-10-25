@@ -71,7 +71,21 @@ export const PlansPage: React.FC = () => {
       .getCatalog()
       .then((res) => {
         if (!isMounted) return;
-        setProducts(res.products || []);
+        if (res.products && res.products.length > 0) {
+          setProducts(
+            res.products.map((p: any) => ({
+              code: p.code,
+              kind: p.kind,
+              name: p.name,
+              description: p.description,
+              credits: p.credits ?? 1,
+              priceCents: p.priceCents ?? p.price_cents ?? 0,
+              creditValidityDays: p.creditValidityDays ?? p.credit_validity_days ?? 365,
+            }))
+          );
+        } else {
+          setProducts(res.products || []);
+        }
         if (res.plans && res.plans.length > 0) {
           setPlans(
             res.plans.map((p: any) => ({
@@ -291,10 +305,12 @@ export const PlansPage: React.FC = () => {
 
       {/* Catálogo de Pacotes Avulsos */}
       {activeTab === 'packs' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {products.map((prod) => {
-            const isPro = prod.code === 'pack_pro';
-            const priceFormatted = (prod.priceCents / 100).toLocaleString('pt-BR', {
+            const isPro = prod.code === 'pack_criador' || prod.code === 'pack_pro';
+            const priceCents = prod.priceCents ?? (prod as any).price_cents ?? 0;
+            const validity = prod.creditValidityDays ?? (prod as any).credit_validity_days ?? 365;
+            const priceFormatted = (priceCents / 100).toLocaleString('pt-BR', {
               style: 'currency',
               currency: 'BRL',
             });
@@ -309,11 +325,12 @@ export const PlansPage: React.FC = () => {
                 creditsLabel={`${prod.credits} ${prod.credits === 1 ? 'Crédito' : 'Créditos'}`}
                 isPopular={isPro}
                 features={[
-                  `${prod.credits} edições em alta resolução`,
-                  `Validade de ${prod.creditValidityDays} dias`,
+                  `${prod.credits} ${prod.credits === 1 ? 'edição fotográfica' : 'edições fotográficas'} com IA`,
+                  `Validade de ${validity} dias`,
+                  'Sem mensalidade / Sem renovação',
+                  'Acesso a todos os 70 comandos de IA',
                   'Download em PNG, JPG e WebP',
                   'Retenção privativa de 90 dias',
-                  'Acesso a todas as 14 ferramentas',
                 ]}
                 buttonText="Adquirir Agora"
                 onSelect={() =>

@@ -817,6 +817,58 @@ export const api = {
       });
     },
 
+    async getProducts() {
+      return request<{ items: Array<{
+        id: string;
+        code: string;
+        kind: string;
+        name: string;
+        description: string | null;
+        credits: number;
+        price_cents: number;
+        credit_validity_days: number | null;
+        active: number;
+        sort_order?: number;
+      }> }>('/api/admin/billing/products');
+    },
+
+    async updateProduct(id: string, data: {
+      name?: string;
+      description?: string;
+      priceCents?: number;
+      credits?: number;
+      creditValidityDays?: number | null;
+      active?: boolean;
+    }) {
+      return request<{ ok: boolean; id: string }>(`/api/admin/billing/products/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async createProduct(data: {
+      code: string;
+      kind?: 'single_edit' | 'credit_pack';
+      name: string;
+      description?: string;
+      priceCents: number;
+      credits: number;
+      creditValidityDays?: number | null;
+      active?: boolean;
+      sortOrder?: number;
+    }) {
+      return request<{ ok: boolean; product: any }>('/api/admin/billing/products', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    async deleteProduct(id: string) {
+      return request<{ ok: boolean; id: string; message: string }>(`/api/admin/billing/products/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    },
+
     async getFeedbacks() {
       return request<{ items: Array<{
         id: string;
