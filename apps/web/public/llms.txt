@@ -28,7 +28,7 @@ A plataforma conta com um catálogo interno de 70 comandos inteligentes dividido
 - Orçamento prévio transparente com cálculo exato de créditos antes da confirmação da edição.
 
 ## Links Oficiais
-- Início e Edição Rápida: https://photostudio.ai/
-- Preços e Planos: https://photostudio.ai/pricing
-- Termos de Uso: https://photostudio.ai/termos
-- Política de Privacidade LGPD: https://photostudio.ai/privacidade
+- Início e Edição Rápida: https://photostudioai.com.br/
+- Preços e Planos: https://photostudioai.com.br/pricing
+- Termos de Uso: https://photostudioai.com.br/termos
+- Política de Privacidade LGPD: https://photostudioai.com.br/privacidade

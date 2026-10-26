@@ -2,45 +2,45 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://photostudio.ai/</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/" />
   </url>
   <url>
-    <loc>https://photostudio.ai/pricing</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/pricing</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/pricing" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/pricing" />
   </url>
   <url>
-    <loc>https://photostudio.ai/auth/register</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/auth/register</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/auth/register" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/auth/register" />
   </url>
   <url>
-    <loc>https://photostudio.ai/auth/login</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/auth/login</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/auth/login" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/auth/login" />
   </url>
   <url>
-    <loc>https://photostudio.ai/termos</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/termos</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/termos" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/termos" />
   </url>
   <url>
-    <loc>https://photostudio.ai/privacidade</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://photostudioai.com.br/privacidade</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudio.ai/privacidade" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://photostudioai.com.br/privacidade" />
   </url>
 </urlset>
