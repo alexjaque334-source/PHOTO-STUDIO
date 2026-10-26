@@ -32,13 +32,14 @@ import {
   Coins,
   FileText,
   Shield,
-  Search,
-  MessageSquare,
-  X,
+  Heart,
+  Sun,
+  Video,
+  ShoppingBag,
+  PartyPopper,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api-client';
-import { COCKPIT_COMMANDS, COCKPIT_CATEGORIES } from '@/data/commands-catalog';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,35 +48,7 @@ export const LandingPage: React.FC = () => {
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
   const [pricingTab, setPricingTab] = useState<'packs' | 'plans'>('packs');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [cockpitSearch, setCockpitSearch] = useState<string>('');
-  const [visibleCount, setVisibleCount] = useState<number>(12);
-
-  const filteredCommands = React.useMemo(() => {
-    let list = COCKPIT_COMMANDS;
-    if (selectedCategory !== 'all') {
-      list = list.filter((c) => c.category === selectedCategory);
-    }
-    if (cockpitSearch.trim()) {
-      const q = cockpitSearch.toLowerCase().trim();
-      list = list.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.intent.toLowerCase().includes(q) ||
-          c.userPhrase.toLowerCase().includes(q) ||
-          c.allPhrases.some((p) => p.toLowerCase().includes(q)) ||
-          c.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    return list;
-  }, [selectedCategory, cockpitSearch]);
-
-  const displayedCommands = React.useMemo(() => {
-    if (selectedCategory !== 'all' || cockpitSearch.trim()) {
-      return filteredCommands.slice(0, visibleCount < 24 ? 24 : visibleCount);
-    }
-    return filteredCommands.slice(0, visibleCount);
-  }, [filteredCommands, selectedCategory, cockpitSearch, visibleCount]);
+  
 
   const [livePlans, setLivePlans] = useState<any[]>([]);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
@@ -94,6 +67,58 @@ export const LandingPage: React.FC = () => {
       isMounted = false;
     };
   }, []);
+
+  // 8 Tópicos Especializados do Cockpit (70 Ferramentas no Total)
+  const cockpitTopics = [
+    {
+      title: 'Básico & Restauração',
+      count: '14 Ferramentas',
+      icon: <Scissors className="h-5 w-5 text-primary" />,
+      description: 'Recortes perfeitos com canal alfa transparente, remoção de objetos indesejados, correção de luz e restauração de fotos analógicas antigas.',
+    },
+    {
+      title: 'Ensaios & Retratos',
+      count: '8 Ferramentas',
+      icon: <Camera className="h-5 w-5 text-indigo-400" />,
+      description: 'Retratos executivos para LinkedIn, ensaios de estúdio de alta definição, retratos femininos elegantes, gestante e infantil profissional.',
+    },
+    {
+      title: 'Aniversários & Festas',
+      count: '8 Ferramentas',
+      icon: <PartyPopper className="h-5 w-5 text-pink-400" />,
+      description: 'Cenários comemorativos para festas infantis, debutante 15 anos, smash the cake, celebrações ao ar livre e aniversários adultos sofisticados.',
+    },
+    {
+      title: 'Casamentos & Noivas',
+      count: '8 Ferramentas',
+      icon: <Heart className="h-5 w-5 text-rose-400" />,
+      description: 'Ensaios pré-wedding, cerimônias clássicas, pôr do sol na praia, detalhes do véu e retratos cinematográficos com iluminação dourada.',
+    },
+    {
+      title: 'Natureza & Paisagens',
+      count: '8 Ferramentas',
+      icon: <Sun className="h-5 w-5 text-amber-400" />,
+      description: 'Substituição por destinos turísticos dos sonhos, praias paradisíacas, montanhas dramáticas, cachoeiras e florestas místicas.',
+    },
+    {
+      title: 'Eventos & Palcos',
+      count: '8 Ferramentas',
+      icon: <Video className="h-5 w-5 text-purple-400" />,
+      description: 'Fotografias em palestras executivas, convenções de negócios, bailes de formatura, festivais de música e eventos de grande porte.',
+    },
+    {
+      title: 'Motion & Efeitos Visuais',
+      count: '8 Ferramentas',
+      icon: <Wand2 className="h-5 w-5 text-cyan-400" />,
+      description: 'Efeitos cinematográficos de gravidade zero, partículas douradas em suspensão, trilhas de luz neon e dinamismo visual de alta energia.',
+    },
+    {
+      title: 'Comercial & E-commerce',
+      count: '8 Ferramentas',
+      icon: <ShoppingBag className="h-5 w-5 text-emerald-400" />,
+      description: 'Imagens publicitárias de alto padrão para catálogos de produtos, gastronomia gourmet, cosméticos, joias e anúncios de conversão.',
+    },
+  ];
 
   // Amostras de alta qualidade para o comparador Before/After
   const heroOriginal =
@@ -271,179 +296,57 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Seção 2: Cockpit Criativo com 70 Comandos Especializados */}
+      {/* Seção 2: Os 8 Tópicos Especializados do Cockpit */}
       <section id="ferramentas" className="py-20 border-b border-border/60 bg-card/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <Badge variant="secondary" className="px-3 py-1 text-xs">Cockpit Criativo Inteligente</Badge>
+            <Badge variant="secondary" className="px-3 py-1 text-xs">Cockpit Criativo</Badge>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              70 Comandos Especializados de IA
+              70 Ferramentas em 8 Tópicos Especializados
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Você não precisa aprender termos técnicos de inteligência artificial. Basta pedir como se estivesse conversando no WhatsApp — nosso motor NLU entende o contexto e aplica a edição exata sem complicação.
+              Você não precisa aprender termos técnicos de inteligência artificial. Basta pedir o que deseja em português simples no WhatsApp e o motor aplica a edição ideal.
             </p>
           </div>
 
-          {/* Barra de Busca e Filtros Rápidos */}
-          <div className="space-y-6">
-            <div className="max-w-lg mx-auto relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                value={cockpitSearch}
-                onChange={(e) => {
-                  setCockpitSearch(e.target.value);
-                  setVisibleCount(24);
-                }}
-                placeholder="Buscar comando... ex: linkedin, remover fundo, casamento, praia, produto"
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-xs"
-              />
-              {cockpitSearch && (
-                <button
-                  type="button"
-                  onClick={() => setCockpitSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md cursor-pointer"
-                  aria-label="Limpar busca"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Abas de Categorias */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {COCKPIT_CATEGORIES.map((cat) => {
-                const isSelected = selectedCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(cat.id);
-                      setVisibleCount(12);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer border ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                        : 'bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                    }`}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cockpitTopics.map((topic) => (
+              <Card
+                key={topic.title}
+                className="flex flex-col justify-between hover:border-primary/50 transition-all hover:shadow-md bg-card/60 border-border/80 p-6"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="p-3 w-fit rounded-xl bg-secondary/80 border border-border/50">
+                      {topic.icon}
+                    </div>
+                    <Badge variant="outline" className="text-[11px] font-semibold border-primary/30 text-primary">
+                      {topic.count}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      {topic.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+                      {topic.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-semibold justify-between group hover:border-primary/60 hover:bg-primary hover:text-primary-foreground transition-all"
+                    onClick={() => navigate(isAuthenticated ? '/app' : '/login')}
                   >
-                    <span>{cat.name}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                        isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-secondary text-muted-foreground'
-                      }`}
-                    >
-                      {cat.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    <span>Experimentar</span>
+                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
-
-          {/* Grade de Comandos */}
-          {displayedCommands.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayedCommands.map((cmd) => (
-                <Card
-                  key={cmd.id}
-                  className="flex flex-col justify-between hover:border-primary/50 transition-all hover:shadow-md bg-card/60 backdrop-blur-xs border-border/80"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider">
-                        {cmd.category}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] font-medium border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5"
-                      >
-                        {cmd.credits === 1 ? '1 crédito' : `${cmd.credits} créditos`}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-base font-bold leading-snug">
-                      {cmd.title}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                      {cmd.intent}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3.5 pt-0">
-                    <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 space-y-1">
-                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span>Como você pede no chat:</span>
-                      </div>
-                      <p className="text-xs italic text-foreground font-medium">
-                        "{cmd.userPhrase}"
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1">
-                      {cmd.tags.slice(0, 4).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-secondary/80 text-muted-foreground"
-                        >
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs font-semibold justify-between group hover:border-primary/60 hover:bg-primary hover:text-primary-foreground transition-all"
-                      onClick={() => navigate(isAuthenticated ? '/app' : '/login')}
-                    >
-                      <span>Experimentar este comando</span>
-                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 space-y-3 bg-secondary/20 rounded-2xl border border-dashed border-border p-8">
-              <Search className="h-8 w-8 text-muted-foreground mx-auto opacity-50" />
-              <h3 className="font-semibold text-sm">Nenhum comando encontrado para "{cockpitSearch}"</h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Tente buscar por termos simples como "fundo", "retrato", "casamento", "restauração" ou selecione outra categoria.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setCockpitSearch('');
-                  setSelectedCategory('all');
-                }}
-                className="text-xs"
-              >
-                Limpar Filtros e Ver Todos
-              </Button>
-            </div>
-          )}
-
-          {/* Botão de Ver Mais */}
-          {displayedCommands.length < filteredCommands.length && (
-            <div className="flex flex-col items-center justify-center gap-3 pt-4">
-              <p className="text-xs text-muted-foreground">
-                Mostrando {displayedCommands.length} de {filteredCommands.length} comandos disponíveis
-              </p>
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={() => setVisibleCount((prev) => prev + 12)}
-                className="gap-2 text-xs font-semibold"
-              >
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                Carregar Mais Comandos (+{Math.min(12, filteredCommands.length - displayedCommands.length)})
-              </Button>
-            </div>
-          )}
         </div>
       </section>
 
