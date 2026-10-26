@@ -575,7 +575,7 @@ export const LandingPage: React.FC = () => {
                 {
                   code: 'single_edit',
                   name: 'Edição Avulsa',
-                  description: '1 crédito para realizar 1 edição com inteligência artificial profissional.',
+                  description: '1 foto avulsa para testar o estúdio com IA.',
                   credits: 1,
                   price_cents: 790,
                   credit_validity_days: 30,
@@ -583,7 +583,7 @@ export const LandingPage: React.FC = () => {
                 {
                   code: 'pack_inicial',
                   name: 'Pacote Inicial',
-                  description: '5 créditos de edição em alta resolução válidos por 12 meses.',
+                  description: '5 créditos de edição válidos por 12 meses.',
                   credits: 5,
                   price_cents: 1990,
                   credit_validity_days: 365,
@@ -591,17 +591,17 @@ export const LandingPage: React.FC = () => {
                 {
                   code: 'pack_criador',
                   name: 'Pacote Criador',
-                  description: '12 créditos perfeitos para criadores de conteúdo e fotos profissionais.',
-                  credits: 12,
+                  description: '10 créditos para criadores e ensaios com 6 estilos de fotos.',
+                  credits: 10,
                   price_cents: 3990,
                   credit_validity_days: 365,
                 },
                 {
                   code: 'pack_profissional',
                   name: 'Pacote Profissional',
-                  description: '20 créditos para profissionais e marcas com o melhor custo por foto.',
-                  credits: 20,
-                  price_cents: 5990,
+                  description: '30 créditos para profissionais com todos os 8 tipos de fotos liberados.',
+                  credits: 30,
+                  price_cents: 7490,
                   credit_validity_days: 365,
                 },
               ];
@@ -631,14 +631,42 @@ export const LandingPage: React.FC = () => {
                         periodLabel="pagamento único"
                         creditsLabel={`${credits} ${credits === 1 ? 'Crédito' : 'Créditos'}`}
                         isPopular={isPopular}
-                        features={[
-                          `${credits} ${credits === 1 ? 'edição fotográfica' : 'edições fotográficas'} com IA`,
-                          `Validade de ${validity} dias`,
-                          'Sem mensalidade / Sem renovação automática',
-                          'Acesso a todos os 70 comandos inteligentes',
-                          'Download em PNG, JPG e WebP em alta definição',
-                          'Retenção privativa de 90 dias',
-                        ]}
+                        features={(() => {
+                          if (prod.code === 'single_edit') {
+                            return [
+                              '1 edição fotográfica com IA',
+                              'Básico & Restauração + Ensaios & Retratos (2 tipos)',
+                              'Retenção privativa de 30 dias',
+                              'Download em alta definição (PNG, JPG, WebP)',
+                              'Sem mensalidade / Sem renovação',
+                            ];
+                          }
+                          if (prod.code === 'pack_inicial') {
+                            return [
+                              '5 edições fotográficas com IA',
+                              '4 tipos (+ Aniversários & Festas, Casamentos)',
+                              'Retenção privativa de 30 dias',
+                              'Validade dos créditos de 1 ano',
+                              'Download em alta definição (PNG, JPG, WebP)',
+                            ];
+                          }
+                          if (prod.code === 'pack_criador') {
+                            return [
+                              '10 edições fotográficas com IA',
+                              '6 tipos (+ Natureza & Paisagens, Eventos & Palco)',
+                              'Retenção privativa de 30 dias',
+                              'Validade dos créditos de 1 ano',
+                              'Melhor custo-benefício para criadores',
+                            ];
+                          }
+                          return [
+                            '30 edições fotográficas com IA',
+                            'Todos os 8 tipos de fotos (+ Comercial & E-commerce)',
+                            'Retenção estendida de 50 dias',
+                            'Validade dos créditos de 1 ano',
+                            'Download em máxima definição comercial',
+                          ];
+                        })()}
                         buttonText={isAuthenticated ? 'Adquirir Créditos' : 'Comprar Agora'}
                         onSelect={() =>
                           navigate(
@@ -659,7 +687,7 @@ export const LandingPage: React.FC = () => {
                 id: 'plan_pessoal',
                 code: 'pessoal',
                 name: 'Plano Pessoal',
-                description: '15 créditos mensais para criadores individuais e fotos pessoais.',
+                description: '15 créditos mensais para fotos pessoais com 45 dias de histórico.',
                 monthly_credits: 15,
                 price_cents: 2990,
               },
@@ -667,7 +695,7 @@ export const LandingPage: React.FC = () => {
                 id: 'plan_pro',
                 code: 'pro',
                 name: 'Plano Pro',
-                description: '40 créditos mensais para lojas virtuais, fotógrafos e produção contínua.',
+                description: '40 créditos mensais com Imagem Motion exclusiva e 60 dias de histórico.',
                 monthly_credits: 40,
                 price_cents: 6990,
               },
@@ -675,9 +703,9 @@ export const LandingPage: React.FC = () => {
                 id: 'plan_business',
                 code: 'business',
                 name: 'Plano Business',
-                description: '100 créditos mensais com maior economia por imagem para marcas e agências.',
+                description: '100 créditos mensais com todos os 8 tipos de fotos e 90 dias de histórico.',
                 monthly_credits: 100,
-                price_cents: 14990,
+                price_cents: 15990,
               },
             ];
 
@@ -709,14 +737,33 @@ export const LandingPage: React.FC = () => {
                       periodLabel="por mês"
                       creditsLabel={`${credits} Créditos / mês`}
                       isPopular={isPopular}
-                      features={[
-                        `${credits} créditos renovados todo mês`,
-                        'Acesso completo aos 70 comandos de IA',
-                        'Remoção de fundo com IA óptica',
-                        'Histórico de versões não-destrutivo',
-                        'Downloads em alta resolução (PNG, JPG, WebP)',
-                        'Cancele quando quiser com 1 clique',
-                      ]}
+                      features={(() => {
+                        if (plan.code === 'pessoal') {
+                          return [
+                            '15 créditos renovados todo mês',
+                            'Fotos pessoais, retratos e restauração',
+                            'Retenção garantida de 45 dias',
+                            'Downloads em alta resolução (PNG, JPG, WebP)',
+                            'Cancele quando quiser com 1 clique',
+                          ];
+                        }
+                        if (plan.code === 'pro') {
+                          return [
+                            '40 créditos renovados todo mês',
+                            'Exclusivo: Imagem Motion & Efeitos Visuais ✨',
+                            'Retenção estendida de 60 dias',
+                            'Sem fotografia Comercial & E-commerce',
+                            'Cancele quando quiser com 1 clique',
+                          ];
+                        }
+                        return [
+                          '100 créditos renovados todo mês',
+                          'Acesso total aos 8 tipos de fotos',
+                          'Comercial & E-commerce + Imagem Motion',
+                          'Retenção máxima de 90 dias',
+                          'Prioridade máxima na fila de renderização',
+                        ];
+                      })()}
                       buttonText={isAuthenticated ? 'Assinar no Painel' : `Assinar ${plan.name}`}
                       onSelect={() =>
                         navigate(

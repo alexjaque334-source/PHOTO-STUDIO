@@ -8,6 +8,7 @@ import { DomainError } from '../contracts';
 import type { Env } from '../env';
 import { execute, queryOne } from '../db';
 import { addDays, newId, nowIso } from '../lib/http';
+import { calculateUserRetentionDays } from '../lib/retention-calculator';
 import { createStorageService } from '../storage';
 import { createAiEditService } from '../ai';
 import { validateImageUpload } from '../security/upload';
@@ -134,7 +135,8 @@ export async function processSingleEditJob(
 
     const fileHash = await sha256Hex(new Uint8Array(aiResult.bytes));
     const now = nowIso();
-    const expiresAt = addDays(now, 90);
+    const retentionDays = await calculateUserRetentionDays(env.DB, userId);
+    const expiresAt = addDays(now, retentionDays);
 
     // 7. Insere nova versão em image_versions
     await execute(
@@ -165,8 +167,8 @@ export async function processSingleEditJob(
     // 8. Atualiza ponteiro da imagem para a nova versão
     await execute(
       env.DB,
-      'UPDATE images SET current_version_id = ? WHERE id = ?',
-      [newVersionId, job.image_id],
+      'UPDATE images SET current_version_id = ?, expires_at = ? WHERE id = ?',
+      [newVersionId, expiresAt, job.image_id],
     );
 
     // 9. Atualiza job como bem-sucedido

@@ -11,6 +11,7 @@ import { addDays, newId, nowIso, parseJson } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
 import { createStorageService } from '../storage';
 import { validateImageUpload } from '../security/upload';
+import { calculateUserRetentionDays } from '../lib/retention-calculator';
 import { sha256Hex } from '../auth/crypto';
 
 const imageRoutes = new Hono<AppContext>();
@@ -120,7 +121,7 @@ imageRoutes.post('/', requireAuth(), async (c) => {
   }
 
   const fileHash = await sha256Hex(new Uint8Array(fileBytes));
-  const retentionDays = await getSystemSetting<number>(c.env.DB, 'retention.days', 90);
+  const retentionDays = await calculateUserRetentionDays(c.env.DB, user.id);
   const expiresAt = addDays(now, retentionDays);
 
   // Insere na tabela images
