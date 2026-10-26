@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>Photo Studio AI — Edição Profissional de Fotos com Inteligência Artificial</title>
     <meta
       name="description"
@@ -12,6 +12,20 @@
     <meta name="keywords" content="inteligência artificial, edição de fotos, ensaio fotográfico de estúdio, remoção de fundo, fotografia corporativa linkedin, restauração de fotos antigas, photo studio ai" />
     <meta name="author" content="Photo Studio AI" />
     <meta name="theme-color" content="#090B10" />
+
+    <!-- Configurações PWA e Suporte a Apple iOS / iPadOS e Android -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PhotoStudio" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+    <meta name="application-name" content="Photo Studio AI" />
+    <meta name="msapplication-TileColor" content="#090B10" />
+    <meta name="msapplication-navbutton-color" content="#090B10" />
 
     <!-- Canonical e Hreflang -->
     <link rel="canonical" href="https://photostudio.ai/" />
@@ -121,5 +135,19 @@
   <body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Registro do Service Worker para suporte PWA offline e instalação
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              // Service worker registrado
+            })
+            .catch((err) => {
+              // Registro em falha silenciosa para dev local sem impacto
+            });
+        });
+      }
+    </script>
   </body>
 </html>

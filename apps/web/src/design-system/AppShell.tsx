@@ -5,6 +5,7 @@ import { ThemeToggle } from './Theme';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Drawer } from './Drawer';
+import { InstallAppModal } from './InstallAppModal';
 import {
   Sparkles,
   Image,
@@ -17,6 +18,8 @@ import {
   Sliders,
   LayoutDashboard,
   User,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -58,6 +61,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   className,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
 
   const defaultNavItems: NavItem[] = [
     {
@@ -138,7 +142,27 @@ export const AppShell: React.FC<AppShellProps> = ({
           </div>
 
           {/* Área de Ações à Direita: Saldo de Créditos, Alternador de Tema e Usuário */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Botão de Instalar App no Celular / Computador */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setInstallModalOpen(true)}
+              leftIcon={<Smartphone className="h-3.5 w-3.5 text-primary" />}
+              className="hidden sm:inline-flex text-xs font-semibold border-primary/30 hover:border-primary/60 text-foreground"
+            >
+              Instalar App
+            </Button>
+            <button
+              type="button"
+              onClick={() => setInstallModalOpen(true)}
+              title="Instalar App no Celular (Apple & Android)"
+              aria-label="Instalar App"
+              className="sm:hidden p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+
             {/* Saldo de Créditos em Ouro */}
             <div
               onClick={() => handleNavClick('/wallet')}
@@ -288,8 +312,90 @@ export const AppShell: React.FC<AppShellProps> = ({
         </Drawer>
 
         {/* Área de Trabalho / Workspace Central */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">{children}</main>
       </div>
+
+      {/* Barra de Navegação Inferior Mobile (Padrão WhatsApp & App Nativo / Ergonomia de Polegar) */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border/80 px-2 py-1.5 pb-[max(env(safe-area-inset-bottom),0.6rem)] flex items-center justify-around shadow-lg"
+        aria-label="Navegação rápida do celular"
+      >
+        <button
+          type="button"
+          onClick={() => handleNavClick('/dashboard')}
+          className={cn(
+            'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
+            currentPath === '/dashboard'
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <LayoutDashboard className="h-5 w-5 mb-0.5" />
+          <span className="truncate">Início</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleNavClick('/studio')}
+          className={cn(
+            'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
+            currentPath.startsWith('/studio')
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Sparkles className="h-5 w-5 mb-0.5 text-primary" />
+          <span className="truncate">Studio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleNavClick('/library')}
+          className={cn(
+            'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
+            currentPath.startsWith('/library')
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Image className="h-5 w-5 mb-0.5" />
+          <span className="truncate">Fotos</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleNavClick('/pricing')}
+          className={cn(
+            'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
+            currentPath.startsWith('/pricing')
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <CreditCard className="h-5 w-5 mb-0.5" />
+          <span className="truncate">Planos</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleNavClick('/account')}
+          className={cn(
+            'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
+            currentPath.startsWith('/account')
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <User className="h-5 w-5 mb-0.5" />
+          <span className="truncate">Perfil</span>
+        </button>
+      </nav>
+
+      {/* Modal de Instalação do Aplicativo (Apple & Android) */}
+      <InstallAppModal
+        isOpen={installModalOpen}
+        onClose={() => setInstallModalOpen(false)}
+      />
     </div>
   );
 };

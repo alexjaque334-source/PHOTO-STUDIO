@@ -45,3 +45,4 @@ export * from './AdminShell';
 export * from './ErrorBoundary';
 
 export * from './LegalModal';
+export * from './InstallAppModal';

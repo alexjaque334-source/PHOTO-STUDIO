@@ -112,12 +112,39 @@
 
 * {
   border-color: var(--border);
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  overscroll-behavior-y: none;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Otimização de toque mobile para botões e inputs */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Utilitários de Safe Area Insets para iPhone com Notch e Dynamic Island */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .safe-pb-nav {
+    padding-bottom: calc(max(env(safe-area-inset-bottom), 0px) + 4rem);
+  }
 }
 
 /* A11y: Respeito a prefers-reduced-motion */

@@ -13,6 +13,7 @@ import {
   BeforeAfterSlider,
   PriceCard,
   LegalModal,
+  InstallAppModal,
 } from '@/design-system';
 import {
   Sparkles,
@@ -37,6 +38,9 @@ import {
   Video,
   ShoppingBag,
   PartyPopper,
+  Smartphone,
+  Apple,
+  Chrome,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api-client';
@@ -47,6 +51,7 @@ export const LandingPage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
+  const [installModalOpen, setInstallModalOpen] = useState(false);
   const [pricingTab, setPricingTab] = useState<'packs' | 'plans'>('packs');
   
 
@@ -184,7 +189,27 @@ export const LandingPage: React.FC = () => {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Botão Instalar App (Apple & Android) */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setInstallModalOpen(true)}
+              leftIcon={<Smartphone className="h-4 w-4 text-primary" />}
+              className="hidden sm:inline-flex border-primary/30 hover:border-primary/60 text-xs font-semibold"
+            >
+              Instalar App
+            </Button>
+            <button
+              type="button"
+              onClick={() => setInstallModalOpen(true)}
+              title="Instalar App no Celular (Apple & Android)"
+              aria-label="Instalar App"
+              className="sm:hidden p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+
             <ThemeToggle />
             {isAuthenticated ? (
               <Button
@@ -738,6 +763,121 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Seção Exclusiva de Instalação Mobile & Desktop (PWA Apple & Android) */}
+      <section className="py-16 md:py-24 border-b border-border/80 bg-gradient-to-b from-card/30 to-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl border border-primary/30 bg-card/60 backdrop-blur-xl p-8 sm:p-12 overflow-hidden shadow-2xl">
+            {/* Efeito de brilho de fundo */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-5 text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold">
+                  <Smartphone className="w-4 h-4" />
+                  <span>Aplicativo Oficial para Celular e Computador</span>
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
+                  Instale o Photo Studio AI no seu{' '}
+                  <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    iPhone (Apple) ou Android
+                  </span>
+                </h2>
+
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+                  Acesse com 1 toque direto da tela inicial do seu celular, sem precisar baixar nada pesado da App Store ou Play Store. Funciona em tela cheia com alta velocidade, câmera integrada e suporte offline.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="flex items-center gap-2.5 text-xs text-foreground/90 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Compatível com iOS (Safari / iPhone / iPad)</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs text-foreground/90 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Compatível com Android (Chrome / Samsung)</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs text-foreground/90 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Zero espaço de armazenamento ocupado</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs text-foreground/90 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Câmera instantânea e edição por voz</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col sm:flex-row items-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => setInstallModalOpen(true)}
+                    leftIcon={<Smartphone className="w-5 h-5" />}
+                    className="w-full sm:w-auto shadow-lg shadow-primary/20"
+                  >
+                    Instalar Aplicativo Agora
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onClick={() => navigate('/auth/register')}
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                    className="w-full sm:w-auto"
+                  >
+                    Criar Conta Gratuita
+                  </Button>
+                </div>
+              </div>
+
+              {/* Card ilustrativo das plataformas */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="w-full max-w-sm p-6 rounded-2xl bg-secondary/60 border border-border/80 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-rose-500" />
+                      <div className="h-3 w-3 rounded-full bg-amber-500" />
+                      <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                    </div>
+                    <span className="text-[11px] font-mono text-muted-foreground">PWA Standalone</span>
+                  </div>
+
+                  <div className="flex items-center justify-around py-4">
+                    <div
+                      onClick={() => setInstallModalOpen(true)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/80 hover:border-primary/60 transition-all cursor-pointer w-28 text-center"
+                    >
+                      <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                        <Apple className="w-6 h-6" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">Apple iOS</span>
+                      <span className="text-[10px] text-muted-foreground">iPhone & iPad</span>
+                    </div>
+
+                    <div
+                      onClick={() => setInstallModalOpen(true)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/80 hover:border-emerald-500/60 transition-all cursor-pointer w-28 text-center"
+                    >
+                      <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500">
+                        <Chrome className="w-6 h-6" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">Android</span>
+                      <span className="text-[10px] text-muted-foreground">Google & Samsung</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                    <span className="text-xs font-semibold text-primary">
+                      Instalação direta pelo navegador em 5 segundos
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       </main>
 
       {/* Footer */}
@@ -782,6 +922,11 @@ export const LandingPage: React.FC = () => {
         isOpen={legalModalOpen}
         onClose={() => setLegalModalOpen(false)}
         initialTab={legalModalTab}
+      />
+
+      <InstallAppModal
+        isOpen={installModalOpen}
+        onClose={() => setInstallModalOpen(false)}
       />
     </div>
   );

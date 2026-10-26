@@ -11,6 +11,7 @@ import {
   Skeleton,
   Alert,
   useToast,
+  InstallAppModal,
 } from '@/design-system';
 import {
   Coins,
@@ -33,6 +34,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { api, ImageSummary } from '@/lib/api-client';
 import { generateThumbnail } from '@/lib/image-utils';
+import { usePwaInstall } from '@/lib/usePwaInstall';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,6 +45,10 @@ export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { isInstalled, isMobile } = usePwaInstall();
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // ── Estados da Câmera Integrada & Foto Instantânea ──
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -286,6 +292,43 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* ── Banner de Instalação Mobile (Apple & Android) ── */}
+      {isMobile && !isInstalled && !bannerDismissed && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border border-primary/30 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary text-white shrink-0">
+              <Smartphone className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-foreground block">
+                Instale o App no seu celular (Apple & Android)
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                Tenha o estúdio em tela cheia com acesso rápido e câmera nativa em 1 toque.
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowInstallModal(true)}
+              className="text-xs h-8 px-3"
+            >
+              Instalar
+            </Button>
+            <button
+              type="button"
+              onClick={() => setBannerDismissed(true)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"
+              aria-label="Dispensar aviso"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Lembrete de Segurança 2FA (Faixa Amarela) ── */}
       {!user?.mfaEnabled && (
@@ -705,6 +748,11 @@ export const DashboardPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <InstallAppModal
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+      />
     </div>
   );
 };

@@ -1,0 +1,70 @@
+{
+  "name": "Photo Studio AI — Estúdio Fotográfico com Inteligência Artificial",
+  "short_name": "PhotoStudio",
+  "description": "Edite fotos e crie ensaios fotográficos profissionais com inteligência artificial apenas escrevendo em português.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090B10",
+  "theme_color": "#090B10",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["photo", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo Ensaio / Foto",
+      "short_name": "Novo",
+      "description": "Tirar ou enviar foto e editar com IA",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Minha Biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Ver fotos editadas e downloads",
+      "url": "/library",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Planos & Créditos",
+      "short_name": "Créditos",
+      "description": "Recarregar créditos ou assinar plano",
+      "url": "/pricing",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}
