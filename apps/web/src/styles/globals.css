@@ -118,6 +118,9 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 body {
@@ -127,6 +130,26 @@ body {
   overscroll-behavior-y: none;
   min-height: 100vh;
   min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Otimização de performance e quebra de texto para dispositivos móveis */
+@media (max-width: 768px) {
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Otimização de toque mobile para botões e inputs */

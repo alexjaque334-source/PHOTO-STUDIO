@@ -115,10 +115,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   };
 
   return (
-    <div className={cn('min-h-screen bg-background text-foreground flex flex-col', className)}>
+    <div className={cn('min-h-screen bg-background text-foreground flex flex-col w-full max-w-full overflow-x-hidden', className)}>
       {/* Barra de Topo Geral */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+      <header className="sticky top-0 z-40 w-full max-w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-between px-3 sm:px-6 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -312,7 +312,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         </Drawer>
 
         {/* Área de Trabalho / Workspace Central */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0 max-w-full p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
 
       {/* Barra de Navegação Inferior Mobile (Padrão WhatsApp & App Nativo / Ergonomia de Polegar) */}
