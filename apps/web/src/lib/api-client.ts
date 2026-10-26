@@ -600,7 +600,7 @@ export const api = {
         const job = await api.edits.getJob(jobId);
         onProgress?.(job, attempt);
 
-        if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+        if (['completed', 'succeeded', 'failed', 'cancelled'].includes(job.status)) {
           return job;
         }
 

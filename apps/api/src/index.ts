@@ -80,6 +80,16 @@ app.use('/api/*', async (c, next) => {
 });
 
 app.get('/api/health', (c) => c.json({ ok: true, status: 'healthy' }));
+app.get('/api/health/ai', (c) => {
+  const key = c.env.OPENROUTER_API_KEY;
+  return c.json({
+    ok: true,
+    hasKey: Boolean(key && key.trim().length > 0),
+    keyPrefix: key ? key.substring(0, 8) + '...' : null,
+    keyLength: key ? key.length : 0,
+    baseUrl: c.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+  });
+});
 
 app.route('/api/auth', authRoutes);
 app.route('/api/account', accountRoutes);

@@ -306,6 +306,12 @@ export class OpenRouterClient {
         if (/safety|moderation|policy|nsfw|harmful/i.test(errorMsg)) {
           throw new DomainError('AI_CONTENT_REFUSED', 'O conteúdo da imagem ou texto foi recusado pelos filtros de segurança.', 422, { retryable: false, upstream: errorBody });
         }
+        // Erro de parâmetro ou modelo no OpenRouter: permite tentar modelo de fallback
+        throw new DomainError('AI_UNAVAILABLE', `Modelo de IA recusou a requisição (HTTP ${response.status}). Tentando modelo alternativo...`, response.status, { retryable: true, upstream: errorBody });
+      }
+
+      if (response.status === 404) {
+        throw new DomainError('AI_UNAVAILABLE', 'Modelo de IA não encontrado no provedor. Tentando modelo alternativo...', 404, { retryable: true, upstream: errorBody });
       }
 
       throw new DomainError(

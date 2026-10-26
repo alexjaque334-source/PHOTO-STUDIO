@@ -344,7 +344,7 @@ export const EditorPage: React.FC = () => {
         abortControllerRef.current.signal
       );
 
-      if (finishedJob.status === 'completed') {
+      if (finishedJob.status === 'completed' || (finishedJob.status as string) === 'succeeded') {
         setProgressPercent(100);
         setStatusMessage('Foto transformada com sucesso!');
         success('Sua foto editada está pronta!', 'Transformação Concluída ✨');
@@ -707,7 +707,7 @@ export const EditorPage: React.FC = () => {
             <CardContent className="p-0">
               <div className="aspect-[4/3] sm:aspect-[16/10] w-full bg-black/90 flex items-center justify-center overflow-hidden">
                 {activeVersionUrl ? (
-                  originalVersionUrl && originalVersionUrl !== activeVersionUrl ? (
+                  versions.length > 1 && !isOriginal && originalVersionUrl ? (
                     <BeforeAfterSlider
                       beforeImage={originalVersionUrl}
                       afterImage={activeVersionUrl}

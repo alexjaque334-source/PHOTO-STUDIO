@@ -645,7 +645,7 @@ editRoutes.get('/jobs/:id', requireAuth(), async (c) => {
 
   return c.json({
     id: job.id,
-    status: job.status,
+    status: job.status === 'succeeded' ? 'completed' : job.status,
     resultVersionId: job.result_version_id,
     errorCode: job.error_code,
     errorMessage: job.error_message,
