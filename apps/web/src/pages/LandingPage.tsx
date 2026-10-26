@@ -154,11 +154,14 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary w-full max-w-full overflow-x-hidden">
       {/* Top Header */}
       <header className="sticky top-0 z-50 w-full max-w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 sm:gap-6 min-w-0">
             <a href="/" className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md shrink-0">
-              <div className="sm:hidden">
-                <Logo size="sm" />
+              <div className="sm:hidden flex items-center gap-1.5">
+                <Logo variant="mark" size="sm" />
+                <span className="font-extrabold text-xs tracking-tight text-foreground">
+                  PhotoStudio<span className="text-primary text-[10px] font-black ml-1 px-1 py-0.5 rounded bg-primary/10">AI</span>
+                </span>
               </div>
               <div className="hidden sm:block">
                 <Logo size="md" />
@@ -205,15 +208,6 @@ export const LandingPage: React.FC = () => {
             >
               Instalar App
             </Button>
-            <button
-              type="button"
-              onClick={() => setInstallModalOpen(true)}
-              title="Instalar App no Celular (Apple & Android)"
-              aria-label="Instalar App"
-              className="sm:hidden p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-            >
-              <Download className="h-4 w-4" />
-            </button>
 
             <ThemeToggle />
             {isAuthenticated ? (
@@ -222,7 +216,7 @@ export const LandingPage: React.FC = () => {
                 size="sm"
                 onClick={() => navigate('/dashboard')}
                 rightIcon={<ArrowRight className="h-4 w-4" />}
-                className="text-xs px-2.5 sm:px-3"
+                className="text-xs px-2.5 sm:px-3 h-8"
               >
                 Meu Studio
               </Button>
@@ -232,7 +226,7 @@ export const LandingPage: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate('/auth/login')}
-                  className="hidden xs:inline-flex text-xs px-2"
+                  className="hidden md:inline-flex text-xs px-2"
                 >
                   Entrar
                 </Button>
@@ -241,10 +235,9 @@ export const LandingPage: React.FC = () => {
                   size="sm"
                   onClick={() => navigate('/auth/register')}
                   rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
-                  className="text-xs px-2.5 sm:px-3"
+                  className="text-xs px-2.5 sm:px-3 h-8"
                 >
-                  <span className="xs:hidden">Começar</span>
-                  <span className="hidden xs:inline">Começar Agora</span>
+                  Começar
                 </Button>
               </>
             )}
@@ -255,32 +248,32 @@ export const LandingPage: React.FC = () => {
       <main id="main-content" className="flex-1 w-full max-w-full overflow-x-hidden">
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden w-full max-w-full pt-10 pb-16 md:pt-20 md:pb-28 border-b border-border/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center max-w-3xl mx-auto space-y-5 sm:space-y-6">
+      <section className="relative overflow-hidden w-full max-w-full pt-8 pb-14 md:pt-20 md:pb-28 border-b border-border/60">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center text-center max-w-3xl mx-auto space-y-4 sm:space-y-6">
             <Badge variant="gold" size="md" className="gap-1.5 px-3 py-1 max-w-full text-center">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              <span>Tecnologia de Ponta para E-commerce e Criadores</span>
+              <span className="truncate">Tecnologia Fotográfica de Ponta</span>
             </Badge>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15] break-words">
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.2] break-words px-1">
               Edição de fotos profissional em segundos com{' '}
               <span className="bg-gradient-to-r from-primary via-indigo-400 to-amber-400 bg-clip-text text-transparent">
                 IA de estúdio
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-lg text-muted-foreground leading-relaxed max-w-2xl px-2">
               Remova fundos, aprimore iluminação, recupere fotos antigas e crie imagens de produto cinematográficas com controle não-destrutivo e transparência absoluta de créditos.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center justify-center gap-3 pt-2 max-w-xs sm:max-w-none mx-auto">
               <Button
                 variant="gold"
                 size="lg"
                 leftIcon={<Camera className="h-5 w-5" />}
                 onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth/register')}
-                className="shadow-lg shadow-amber-500/10 font-bold"
+                className="w-full sm:w-auto shadow-lg shadow-amber-500/10 font-bold justify-center"
               >
                 Experimentar no Studio
               </Button>
@@ -291,35 +284,36 @@ export const LandingPage: React.FC = () => {
                   const el = document.getElementById('ferramentas');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
+                className="w-full sm:w-auto justify-center"
               >
                 Explorar os 70 Comandos
               </Button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground pt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-6 text-xs text-muted-foreground pt-3">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                 Edição avulsa por apenas R$ 7,90
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                 Retenção privativa de 90 dias
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                 Exportação em PNG, JPG e WebP
               </span>
             </div>
           </div>
 
           {/* Comparador Interativo de Amostra no Hero */}
-          <div className="mt-14 max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
-            <div className="p-3 bg-secondary/50 border-b border-border/80 flex items-center justify-between text-xs">
-              <span className="font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                Demonstração Interativa: Restauração & Balanço de Cor
+          <div className="mt-10 sm:mt-14 max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+            <div className="p-2.5 sm:p-3 bg-secondary/50 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                <span>Demonstração Interativa com IA</span>
               </span>
-              <span className="text-muted-foreground">Arraste a barra para comparar</span>
+              <span className="text-muted-foreground text-[11px]">Arraste a barra para comparar</span>
             </div>
             <div className="aspect-[16/10] sm:aspect-[16/9] w-full">
               <BeforeAfterSlider
@@ -500,7 +494,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Acesso direto aos Termos e Privacidade na Landing Page */}
-            <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 border-t border-border/40">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center sm:justify-start gap-2.5 border-t border-border/40">
               <Button
                 variant="outline"
                 size="sm"
@@ -508,10 +502,10 @@ export const LandingPage: React.FC = () => {
                   setLegalModalTab('privacy');
                   setLegalModalOpen(true);
                 }}
-                className="gap-2 text-xs"
+                className="w-full sm:w-auto gap-2 text-xs justify-center"
               >
-                <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                Ler Política de Privacidade LGPD Completa
+                <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Privacidade LGPD Completa</span>
               </Button>
               <Button
                 variant="outline"
@@ -520,10 +514,10 @@ export const LandingPage: React.FC = () => {
                   setLegalModalTab('terms');
                   setLegalModalOpen(true);
                 }}
-                className="gap-2 text-xs"
+                className="w-full sm:w-auto gap-2 text-xs justify-center"
               >
-                <FileText className="w-3.5 h-3.5 text-primary" />
-                Ler Termos de Uso do Serviço
+                <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>Termos de Uso do Serviço</span>
               </Button>
             </div>
           </div>
@@ -532,25 +526,25 @@ export const LandingPage: React.FC = () => {
 
       {/* Seção 5: Preços e Planos (100% Sincronizado com Painel Admin) */}
       <section id="precos" className="py-14 md:py-20 border-b border-border/60 w-full max-w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-10 md:space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <Badge variant="gold" className="gap-1.5">
               <Coins className="h-3.5 w-3.5" />
               Planos Oficiais & Preços
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Escolha o Plano Ideal para seu Fluxo de Criação</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Escolha o Plano Ideal para seu Fluxo de Criação</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground px-2">
               Créditos cumulativos, acesso irrestrito aos 70 comandos inteligentes de IA e garantia de cancelamento sem fidelidade.
             </p>
           </div>
 
           {/* Alternador de Catálogo: Pacotes Avulsos vs Assinaturas Mensais */}
           <div className="flex justify-center px-2 w-full">
-            <div className="p-1 rounded-xl bg-secondary/80 border border-border flex flex-col xs:flex-row w-full max-w-md sm:w-auto gap-1">
+            <div className="p-1 rounded-xl bg-secondary/80 border border-border flex flex-col sm:flex-row w-full max-w-xs sm:max-w-md gap-1">
               <button
                 type="button"
                 onClick={() => setPricingTab('packs')}
-                className={`px-4 sm:px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center justify-center gap-2 ${
+                className={`w-full sm:w-auto flex-1 px-3 sm:px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center justify-center gap-1.5 ${
                   pricingTab === 'packs'
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -558,12 +552,11 @@ export const LandingPage: React.FC = () => {
               >
                 <Coins className="h-3.5 w-3.5 shrink-0" />
                 <span>Pacotes Avulsos</span>
-                <span className="hidden sm:inline">(Sem mensalidade)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPricingTab('plans')}
-                className={`px-4 sm:px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center justify-center gap-2 ${
+                className={`w-full sm:w-auto flex-1 px-3 sm:px-5 py-2.5 rounded-lg text-xs font-semibold transition-all select-none flex items-center justify-center gap-1.5 ${
                   pricingTab === 'plans'
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -895,8 +888,8 @@ export const LandingPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-border/80 bg-card/60 py-10 md:py-12 text-xs text-muted-foreground w-full max-w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="mt-auto border-t border-border/80 bg-card/60 py-8 md:py-12 text-xs text-muted-foreground w-full max-w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col items-center md:items-start gap-2">
             <Logo size="sm" />
             <span className="text-[11px]">
@@ -904,28 +897,28 @@ export const LandingPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 font-medium">
-            <a href="/auth/register" className="hover:text-foreground transition-colors">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-6 font-medium text-center">
+            <a href="/auth/register" className="hover:text-foreground transition-colors py-1">
               Criar Conta
             </a>
-            <a href="/auth/login" className="hover:text-foreground transition-colors">
+            <a href="/auth/login" className="hover:text-foreground transition-colors py-1">
               Acessar Studio
             </a>
             <button
               type="button"
               onClick={() => { setLegalModalTab('terms'); setLegalModalOpen(true); }}
-              className="hover:text-foreground transition-colors"
+              className="hover:text-foreground transition-colors py-1"
             >
               Termos de Uso
             </button>
             <button
               type="button"
               onClick={() => { setLegalModalTab('privacy'); setLegalModalOpen(true); }}
-              className="hover:text-foreground transition-colors"
+              className="hover:text-foreground transition-colors py-1"
             >
               Privacidade LGPD
             </button>
-            <a href="#precos" className="hover:text-foreground transition-colors">
+            <a href="#precos" className="hover:text-foreground transition-colors py-1">
               Preços & Créditos
             </a>
           </div>
