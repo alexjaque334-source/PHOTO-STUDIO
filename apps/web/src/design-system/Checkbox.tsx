@@ -50,7 +50,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
     return (
       <div className={cn('flex items-start gap-3 select-none', className)}>
-        <div className="relative flex items-center justify-center mt-0.5">
+        <div className="relative flex items-center justify-center mt-0.5 shrink-0">
           <input
             ref={ref}
             id={id}
@@ -61,24 +61,22 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             onChange={handleChange}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : description ? descId : undefined}
-            className="peer sr-only"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             {...props}
           />
           <div
             className={cn(
-              'h-4 w-4 rounded border border-border bg-card transition-all duration-150 flex items-center justify-center',
-              'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background',
-              'peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-foreground',
-              'peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-disabled:bg-muted',
+              'h-4.5 w-4.5 rounded-md border transition-all duration-150 flex items-center justify-center pointer-events-none',
+              isChecked
+                ? 'bg-primary border-primary text-primary-foreground shadow-xs'
+                : 'border-border bg-card hover:border-primary/60',
+              disabled && 'cursor-not-allowed opacity-50 bg-muted',
               error && 'border-destructive'
             )}
           >
-            <Check
-              className={cn(
-                'h-3 w-3 stroke-[3] transition-transform duration-100',
-                isChecked ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-              )}
-            />
+            {isChecked && (
+              <Check className="h-3.5 w-3.5 stroke-[3] text-primary-foreground stroke-current" />
+            )}
           </div>
         </div>
 

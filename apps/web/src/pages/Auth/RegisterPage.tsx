@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Logo,
   Card,
@@ -15,11 +15,13 @@ import {
   ThemeToggle,
   LegalModal,
 } from '@/design-system';
-import { UserPlus, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { UserPlus, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedItemName = searchParams.get('item');
   const { register } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -88,13 +90,25 @@ export const RegisterPage: React.FC = () => {
           <Link to="/" className="mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
             <Logo size="lg" />
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Criar Conta no Studio</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Criar Perfil no Studio</h1>
           <p className="text-xs text-muted-foreground">
-            Cadastre-se para acessar o estúdio fotográfico com inteligência artificial.
+            {selectedItemName
+              ? `Cadastre seu perfil abaixo para ativar seu ${selectedItemName} e acessar o estúdio.`
+              : 'Cadastre seu perfil para acessar o estúdio fotográfico com inteligência artificial.'}
           </p>
         </div>
 
         <Card className="border-border/80 shadow-xl">
+          {selectedItemName && (
+            <div className="p-4 pb-0">
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2 text-xs text-primary font-medium">
+                <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+                <span>
+                  Item selecionado: <strong>{selectedItemName}</strong>. Conclua o seu perfil para ativar os créditos.
+                </span>
+              </div>
+            </div>
+          )}
           {errorMessage && (
             <div className="p-4 pb-0">
               <Alert variant="danger" onClose={() => setErrorMessage(null)}>
@@ -204,6 +218,7 @@ export const RegisterPage: React.FC = () => {
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               setLegalModalTab('terms');
                               setLegalModalOpen(true);
                             }}
@@ -230,6 +245,7 @@ export const RegisterPage: React.FC = () => {
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               setLegalModalTab('privacy');
                               setLegalModalOpen(true);
                             }}

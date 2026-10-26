@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   PageHeader,
@@ -16,6 +17,8 @@ import {
   Alert,
   Spinner,
   useToast,
+  Checkbox,
+  LegalModal,
 } from '@/design-system';
 import {
   Coins,
@@ -27,6 +30,8 @@ import {
   ShieldCheck,
   Clock,
   Sparkles,
+  User as UserIcon,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -39,6 +44,11 @@ import {
 export const PlansPage: React.FC = () => {
   const { user, refreshWallet } = useAuth();
   const { success, error, info } = useToast();
+  const navigate = useNavigate();
+
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
 
   const [activeTab, setActiveTab] = useState<'plans' | 'packs'>('plans');
   const [products, setProducts] = useState<BillingProduct[]>([]);
@@ -184,11 +194,17 @@ export const PlansPage: React.FC = () => {
     setQrCodeDataUrl(null);
     setPaymentConfirmed(false);
     setBillingType('PIX');
+    setAcceptTerms(false);
   };
 
   const handleProcessCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem) return;
+
+    if (!acceptTerms) {
+      error('É obrigatório concordar com os Termos de Uso e a Política de Privacidade para prosseguir com a compra.', 'Aceite Obrigatório');
+      return;
+    }
 
     setIsCheckingOut(true);
     try {
@@ -250,6 +266,10 @@ export const PlansPage: React.FC = () => {
           await refreshWallet();
           success('Pagamento Pix confirmado! Seus créditos já foram liberados.', 'Sucesso!');
           clearInterval(interval);
+          setTimeout(() => {
+            setSelectedItem(null);
+            navigate('/account');
+          }, 2500);
         }
       } catch (err) {
         // Silencioso durante polling
@@ -406,11 +426,30 @@ export const PlansPage: React.FC = () => {
               </div>
               <h2 className="text-xl font-bold text-foreground">Pagamento Confirmado!</h2>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Parabéns! Seus {selectedItem.credits} créditos foram concedidos à sua carteira e já estão prontos para uso no Studio de Edição.
+                Parabéns! Seus {selectedItem.credits} créditos foram liberados e vinculados ao seu perfil. Redirecionando para seu perfil...
               </p>
-              <div className="pt-4">
-                <Button variant="primary" fullWidth onClick={() => setSelectedItem(null)}>
-                  Fechar e Continuar Criando
+              <div className="pt-4 flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => {
+                    setSelectedItem(null);
+                    navigate('/account');
+                  }}
+                  leftIcon={<UserIcon className="h-4 w-4" />}
+                >
+                  Ir para Meu Perfil
+                </Button>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => {
+                    setSelectedItem(null);
+                    navigate('/dashboard');
+                  }}
+                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                >
+                  Ir para o Studio
                 </Button>
               </div>
             </div>
@@ -544,6 +583,47 @@ export const PlansPage: React.FC = () => {
                 helperText="Exigência regulatória do Banco Central / Asaas para emissão de cobrança"
               />
 
+              {/* Consentimento Obrigatório de Termos e Privacidade no Checkout */}
+              <div className="pt-2 border-t border-border/60">
+                <Checkbox
+                  id="checkoutTermsAccept"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  label={
+                    <span className="text-xs">
+                      Declaro que li e concordo com os{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setLegalModalTab('terms');
+                          setLegalModalOpen(true);
+                        }}
+                        className="text-primary hover:underline font-semibold"
+                      >
+                        Termos de Uso
+                      </button>{' '}
+                      e a{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setLegalModalTab('privacy');
+                          setLegalModalOpen(true);
+                        }}
+                        className="text-primary hover:underline font-semibold"
+                      >
+                        Política de Privacidade (LGPD)
+                      </button>
+                    </span>
+                  }
+                  description="Seus dados estão protegidos pela LGPD e intermediados com segurança pelo Asaas."
+                  required
+                />
+              </div>
+
               <div className="pt-2 flex flex-col gap-2">
                 <Button
                   type="submit"
@@ -573,6 +653,13 @@ export const PlansPage: React.FC = () => {
           )}
         </Modal>
       )}
+
+      {/* Modal de Termos de Uso e Política de Privacidade */}
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
     </div>
   );
 };

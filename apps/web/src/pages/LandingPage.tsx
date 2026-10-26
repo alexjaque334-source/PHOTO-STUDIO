@@ -608,7 +608,13 @@ export const LandingPage: React.FC = () => {
                           'Retenção privativa de 90 dias',
                         ]}
                         buttonText={isAuthenticated ? 'Adquirir Créditos' : 'Comprar Agora'}
-                        onSelect={() => navigate(isAuthenticated ? '/pricing' : '/auth/register')}
+                        onSelect={() =>
+                          navigate(
+                            isAuthenticated
+                              ? '/pricing'
+                              : `/auth/register?item=${encodeURIComponent(prod.name)}`
+                          )
+                        }
                       />
                     );
                   })}
@@ -680,7 +686,13 @@ export const LandingPage: React.FC = () => {
                         'Cancele quando quiser com 1 clique',
                       ]}
                       buttonText={isAuthenticated ? 'Assinar no Painel' : `Assinar ${plan.name}`}
-                      onSelect={() => navigate(isAuthenticated ? '/pricing' : '/auth/register')}
+                      onSelect={() =>
+                        navigate(
+                          isAuthenticated
+                            ? '/pricing'
+                            : `/auth/register?item=${encodeURIComponent(plan.name)}`
+                        )
+                      }
                     />
                   );
                 })}
