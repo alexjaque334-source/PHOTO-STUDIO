@@ -8,8 +8,9 @@
  * - Registro e rastreamento da primeira fatura
  */
 import type { Env } from '../env';
-import { AsaasClient } from './asaas-client';
+import { AsaasClient, type AsaasCreditCard, type AsaasCreditCardHolderInfo } from './asaas-client';
 import { getOrCreateAsaasCustomer } from './customer-manager';
+import { createWalletService } from '../wallet';
 import { newId, nowIso, addDays } from '../lib/http';
 import { DomainError } from '../contracts';
 
@@ -20,6 +21,9 @@ export interface CreateSubscriptionInput {
   cpfCnpj?: string;
   name?: string;
   phone?: string;
+  creditCard?: AsaasCreditCard;
+  creditCardHolderInfo?: AsaasCreditCardHolderInfo;
+  remoteIp?: string;
   idempotencyKey: string;
 }
 
@@ -28,10 +32,12 @@ export interface SubscriptionResult {
   status: string;
   planName: string;
   monthlyCredits: number;
+  creditsGranted?: boolean;
   firstPayment: {
     paymentId: string;
     status: string;
     valueCents: number;
+    creditsGranted?: boolean;
     invoiceUrl?: string;
     pix?: {
       encodedImage: string;
@@ -132,30 +138,12 @@ export async function createSubscription(
     cycle: 'MONTHLY',
     description: `Photo Studio AI - Plano ${plan.name} (${plan.monthly_credits} créditos/mês)`,
     externalReference: internalSubId,
+    creditCard: input.creditCard,
+    creditCardHolderInfo: input.creditCardHolderInfo,
+    remoteIp: input.remoteIp,
   });
 
-  // 5. Salva na tabela subscriptions
-  await db
-    .prepare(
-      `INSERT INTO subscriptions (
-        id, user_id, plan_id, asaas_subscription_id, billing_type, status,
-        price_cents, current_period_start, current_period_end, cancel_at_period_end,
-        created_at, updated_at, cancelled_at
-      ) VALUES (?, ?, ?, ?, ?, 'pending', ?, NULL, NULL, 0, ?, ?, NULL)`,
-    )
-    .bind(
-      internalSubId,
-      userId,
-      plan.id,
-      asaasSub.id,
-      billingType,
-      plan.price_cents,
-      now,
-      now,
-    )
-    .run();
-
-  // 6. Asaas gera automaticamente a primeira cobrança do ciclo. Buscamos essa cobrança para entregar Pix ou invoiceUrl
+  // 5. Asaas gera automaticamente a primeira cobrança do ciclo. Buscamos essa cobrança
   let asaasPaymentId = '';
   let invoiceUrl = '';
   let paymentStatus = 'PENDING';
@@ -175,6 +163,55 @@ export async function createSubscription(
   }
 
   const internalPaymentId = `pay_${newId()}`;
+  const isApproved = ['CONFIRMED', 'RECEIVED'].includes(paymentStatus) || asaasSub.status === 'ACTIVE';
+  const initialSubStatus = isApproved ? 'active' : 'pending';
+  const periodEnd = addDays(now, 30);
+  let paidAt: string | null = null;
+  let creditsGrantedAt: string | null = null;
+
+  // Se o cartão foi aprovado na hora, libera os créditos do plano imediatamente
+  if (isApproved) {
+    paidAt = now;
+    creditsGrantedAt = now;
+    paymentStatus = ['CONFIRMED', 'RECEIVED'].includes(paymentStatus) ? paymentStatus : 'CONFIRMED';
+    const walletService = createWalletService(env);
+    await walletService.grant({
+      userId,
+      bucket: 'subscription',
+      amount: plan.monthly_credits,
+      type: 'grant_subscription',
+      sourceType: 'subscription_cycle',
+      sourceId: internalPaymentId,
+      expiresAt: periodEnd,
+      idempotencyKey: `grant:sub_cycle:${internalPaymentId}`,
+      note: `Assinatura Plano ${plan.name} ativada instantaneamente via Cartão`,
+    });
+  }
+
+  // 6. Salva na tabela subscriptions
+  await db
+    .prepare(
+      `INSERT INTO subscriptions (
+        id, user_id, plan_id, asaas_subscription_id, billing_type, status,
+        price_cents, current_period_start, current_period_end, cancel_at_period_end,
+        created_at, updated_at, cancelled_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL)`,
+    )
+    .bind(
+      internalSubId,
+      userId,
+      plan.id,
+      asaasSub.id,
+      billingType,
+      initialSubStatus,
+      plan.price_cents,
+      isApproved ? now : null,
+      isApproved ? periodEnd : null,
+      now,
+      now,
+    )
+    .run();
+
   let pixData: { encodedImage: string; payload: string; expirationDate: string } | undefined = undefined;
 
   if (asaasPaymentId && billingType === 'PIX') {
@@ -192,7 +229,7 @@ export async function createSubscription(
         id, user_id, asaas_payment_id, external_reference, kind, product_id, subscription_id,
         billing_type, value_cents, net_value_cents, credits, status, due_date, paid_at,
         invoice_url, credits_granted_at, credits_reversed_at, idempotency_key, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'subscription', NULL, ?, ?, ?, NULL, ?, ?, ?, NULL, ?, NULL, NULL, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, 'subscription', NULL, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
     )
     .bind(
       internalPaymentId,
@@ -205,7 +242,9 @@ export async function createSubscription(
       plan.monthly_credits,
       paymentStatus,
       nextDueDate,
+      paidAt,
       invoiceUrl || null,
+      creditsGrantedAt,
       idempotencyKey,
       now,
       now,
@@ -214,13 +253,15 @@ export async function createSubscription(
 
   return {
     subscriptionId: internalSubId,
-    status: 'pending',
+    status: initialSubStatus,
     planName: plan.name,
     monthlyCredits: plan.monthly_credits,
+    creditsGranted: isApproved,
     firstPayment: {
       paymentId: internalPaymentId,
       status: paymentStatus,
       valueCents: plan.price_cents,
+      creditsGranted: isApproved,
       invoiceUrl: invoiceUrl || undefined,
       pix: pixData,
     },

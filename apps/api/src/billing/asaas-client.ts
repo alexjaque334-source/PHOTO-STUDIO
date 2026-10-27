@@ -48,6 +48,25 @@ export interface AsaasPixQrCode {
   expirationDate: string;
 }
 
+export interface AsaasCreditCard {
+  holderName: string;
+  number: string;
+  expiryMonth: string;
+  expiryYear: string;
+  ccv: string;
+}
+
+export interface AsaasCreditCardHolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  postalCode: string;
+  addressNumber: string;
+  addressComplement?: string;
+  phone: string;
+  mobilePhone?: string;
+}
+
 export interface AsaasSubscription {
   id: string;
   customer: string;
@@ -178,6 +197,9 @@ export class AsaasClient {
     description?: string;
     externalReference?: string;
     postalService?: boolean;
+    creditCard?: AsaasCreditCard;
+    creditCardHolderInfo?: AsaasCreditCardHolderInfo;
+    remoteIp?: string;
   }): Promise<AsaasPayment> {
     return this.request<AsaasPayment>('/payments', {
       method: 'POST',
@@ -215,6 +237,9 @@ export class AsaasClient {
     cycle: 'MONTHLY';
     description?: string;
     externalReference?: string;
+    creditCard?: AsaasCreditCard;
+    creditCardHolderInfo?: AsaasCreditCardHolderInfo;
+    remoteIp?: string;
   }): Promise<AsaasSubscription> {
     return this.request<AsaasSubscription>('/subscriptions', {
       method: 'POST',

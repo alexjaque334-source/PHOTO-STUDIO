@@ -198,9 +198,11 @@ export interface BillingPlan {
 
 export interface CheckoutResponse {
   paymentId: string;
-  status: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE';
+  status: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | string;
   valueCents: number;
-  invoiceUrl: string;
+  credits?: number;
+  creditsGranted?: boolean;
+  invoiceUrl?: string;
   pix?: {
     encodedImage?: string;
     payload: string;
@@ -208,9 +210,31 @@ export interface CheckoutResponse {
   };
 }
 
+export interface CreditCardData {
+  holderName: string;
+  number: string;
+  expiryMonth: string;
+  expiryYear: string;
+  ccv: string;
+}
+
+export interface CreditCardHolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  postalCode: string;
+  addressNumber: string;
+  addressComplement?: string;
+  phone: string;
+  mobilePhone?: string;
+}
+
 export interface SubscriptionResponse {
   subscriptionId: string;
   status: string;
+  planName?: string;
+  monthlyCredits?: number;
+  creditsGranted?: boolean;
   firstPayment?: CheckoutResponse;
 }
 
@@ -642,6 +666,9 @@ export const api = {
       billingType: 'PIX' | 'CREDIT_CARD';
       cpfCnpj?: string;
       name?: string;
+      phone?: string;
+      creditCard?: CreditCardData;
+      creditCardHolderInfo?: CreditCardHolderInfo;
     }) {
       return request<CheckoutResponse>('/api/billing/checkout', {
         method: 'POST',
@@ -662,6 +689,10 @@ export const api = {
       planCode: string;
       billingType: 'PIX' | 'CREDIT_CARD';
       cpfCnpj?: string;
+      name?: string;
+      phone?: string;
+      creditCard?: CreditCardData;
+      creditCardHolderInfo?: CreditCardHolderInfo;
     }) {
       return request<SubscriptionResponse>('/api/billing/subscriptions', {
         method: 'POST',

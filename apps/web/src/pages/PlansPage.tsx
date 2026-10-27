@@ -32,6 +32,7 @@ import {
   Sparkles,
   User as UserIcon,
   ArrowRight,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -118,6 +119,59 @@ export const PlansPage: React.FC = () => {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+
+  // Estados do Cartão de Crédito Transparente
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState(user?.fullName || '');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCcv, setCardCcv] = useState('');
+  const [cardHolderCpf, setCardHolderCpf] = useState('');
+  const [cardPostalCode, setCardPostalCode] = useState('');
+  const [cardAddressNumber, setCardAddressNumber] = useState('');
+  const [cardAddressComplement, setCardAddressComplement] = useState('');
+  const [cardPhone, setCardPhone] = useState('');
+
+  // Formatadores de Entrada
+  const formatCardNumber = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 16);
+    return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+  };
+
+  const formatExpiry = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 4);
+    if (digits.length > 2) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return digits;
+  };
+
+  const formatCpfCnpj = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return digits
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  };
+
+  const formatCep = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 8);
+    return digits.replace(/^(\d{5})(\d)/, '$1-$2');
+  };
+
+  const formatPhone = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    }
+    return digits.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  };
 
   // Carregar catálogo de produtos e planos
   useEffect(() => {
@@ -240,6 +294,9 @@ export const PlansPage: React.FC = () => {
     setPaymentConfirmed(false);
     setBillingType('PIX');
     setAcceptTerms(false);
+    setCardHolder(user?.fullName || '');
+    setCardHolderCpf(cpfCnpj || '');
+    setCardPhone((user as any)?.phone || '');
   };
 
   const handleProcessCheckout = async (e: React.FormEvent) => {
@@ -253,47 +310,176 @@ export const PlansPage: React.FC = () => {
 
     setIsCheckingOut(true);
     try {
-      if (selectedItem.isSubscription) {
-        const subRes = await api.billing.createSubscription({
-          planCode: selectedItem.code,
-          billingType,
-          cpfCnpj: cpfCnpj.trim() || undefined,
-        });
+      if (billingType === 'PIX') {
+        const cleanCpf = cpfCnpj.replace(/\D/g, '');
+        if (cleanCpf.length < 11) {
+          error('Informe um CPF ou CNPJ válido para gerar a cobrança Pix.', 'Documento Obrigatório');
+          setIsCheckingOut(false);
+          return;
+        }
 
-        if (subRes.firstPayment) {
-          setCheckoutResult(subRes.firstPayment);
-          if (billingType === 'PIX' && subRes.firstPayment.pix?.payload) {
-            const url = await QRCode.toDataURL(subRes.firstPayment.pix.payload, {
+        if (selectedItem.isSubscription) {
+          const subRes = await api.billing.createSubscription({
+            planCode: selectedItem.code,
+            billingType: 'PIX',
+            cpfCnpj: cleanCpf,
+          });
+
+          if (subRes.firstPayment) {
+            setCheckoutResult(subRes.firstPayment);
+            if (subRes.firstPayment.pix?.payload) {
+              const url = await QRCode.toDataURL(subRes.firstPayment.pix.payload, {
+                margin: 1,
+                width: 260,
+              });
+              setQrCodeDataUrl(url);
+            }
+          } else {
+            success('Assinatura criada com sucesso!', 'Plano Ativo');
+            await refreshWallet();
+            setPaymentConfirmed(true);
+          }
+        } else {
+          const payRes = await api.billing.checkout({
+            productCode: selectedItem.code,
+            billingType: 'PIX',
+            cpfCnpj: cleanCpf,
+            name: user?.fullName,
+          });
+
+          setCheckoutResult(payRes);
+
+          if (payRes.pix?.payload) {
+            const url = await QRCode.toDataURL(payRes.pix.payload, {
               margin: 1,
               width: 260,
             });
             setQrCodeDataUrl(url);
           }
-        } else {
-          success('Assinatura criada com sucesso!', 'Plano Ativo');
-          await refreshWallet();
-          setPaymentConfirmed(true);
         }
       } else {
-        const payRes = await api.billing.checkout({
-          productCode: selectedItem.code,
-          billingType,
-          cpfCnpj: cpfCnpj.trim() || undefined,
-          name: user?.fullName,
-        });
+        // CARTÃO DE CRÉDITO TRANSPARENTE
+        const [expM, expY] = cardExpiry.split('/');
+        const fullYear = expY && expY.length === 2 ? `20${expY}` : expY || '';
+        const cleanCardNum = cardNumber.replace(/\D/g, '');
+        const cleanCpf = (cardHolderCpf || cpfCnpj).replace(/\D/g, '');
+        const cleanCep = cardPostalCode.replace(/\D/g, '');
+        const cleanPhone = cardPhone.replace(/\D/g, '');
 
-        setCheckoutResult(payRes);
+        if (cleanCardNum.length < 13) {
+          error('Número de cartão incompleto ou inválido.', 'Cartão Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (!cardHolder.trim()) {
+          error('Informe o nome impresso no cartão.', 'Nome Obrigatório');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (!expM || !fullYear || Number(expM) < 1 || Number(expM) > 12) {
+          error('Data de validade do cartão inválida (use MM/AA).', 'Validade Inválida');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (cardCcv.length < 3) {
+          error('Código de segurança (CVV) inválido.', 'CVV Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (cleanCpf.length < 11) {
+          error('CPF ou CNPJ do titular é obrigatório.', 'Documento Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (cleanCep.length < 8) {
+          error('CEP de cobrança é obrigatório (8 dígitos).', 'CEP Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (!cardAddressNumber.trim()) {
+          error('Número do endereço de cobrança é obrigatório.', 'Endereço Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
+        if (cleanPhone.length < 8) {
+          error('Telefone de contato é obrigatório.', 'Telefone Inválido');
+          setIsCheckingOut(false);
+          return;
+        }
 
-        if (billingType === 'PIX' && payRes.pix?.payload) {
-          const url = await QRCode.toDataURL(payRes.pix.payload, {
-            margin: 1,
-            width: 260,
+        const creditCardPayload = {
+          holderName: cardHolder.trim().toUpperCase(),
+          number: cleanCardNum,
+          expiryMonth: expM.padStart(2, '0'),
+          expiryYear: fullYear,
+          ccv: cardCcv.trim(),
+        };
+
+        const holderInfoPayload = {
+          name: cardHolder.trim().toUpperCase(),
+          email: user?.email || '',
+          cpfCnpj: cleanCpf,
+          postalCode: cleanCep,
+          addressNumber: cardAddressNumber.trim(),
+          addressComplement: cardAddressComplement.trim() || undefined,
+          phone: cleanPhone,
+          mobilePhone: cleanPhone,
+        };
+
+        if (selectedItem.isSubscription) {
+          const subRes = await api.billing.createSubscription({
+            planCode: selectedItem.code,
+            billingType: 'CREDIT_CARD',
+            cpfCnpj: cleanCpf,
+            name: cardHolder.trim().toUpperCase(),
+            phone: cleanPhone,
+            creditCard: creditCardPayload,
+            creditCardHolderInfo: holderInfoPayload,
           });
-          setQrCodeDataUrl(url);
+
+          if (
+            subRes.status === 'active' ||
+            subRes.creditsGranted ||
+            ['CONFIRMED', 'RECEIVED'].includes(subRes.firstPayment?.status || '')
+          ) {
+            setPaymentConfirmed(true);
+            await refreshWallet();
+            success('Assinatura ativada com sucesso! Seus créditos mensais já estão liberados.', 'Plano Ativo');
+            setTimeout(() => {
+              setSelectedItem(null);
+              navigate('/studio');
+            }, 2500);
+          } else {
+            setCheckoutResult(subRes.firstPayment || null);
+            info('Pagamento do cartão enviado ao Asaas.', 'Em Análise');
+          }
+        } else {
+          const payRes = await api.billing.checkout({
+            productCode: selectedItem.code,
+            billingType: 'CREDIT_CARD',
+            cpfCnpj: cleanCpf,
+            name: cardHolder.trim().toUpperCase(),
+            phone: cleanPhone,
+            creditCard: creditCardPayload,
+            creditCardHolderInfo: holderInfoPayload,
+          });
+
+          if (payRes.creditsGranted || ['CONFIRMED', 'RECEIVED'].includes(payRes.status)) {
+            setPaymentConfirmed(true);
+            await refreshWallet();
+            success('Pagamento com cartão confirmado! Seus créditos já foram liberados.', 'Pagamento Aprovado');
+            setTimeout(() => {
+              setSelectedItem(null);
+              navigate('/studio');
+            }, 2500);
+          } else {
+            setCheckoutResult(payRes);
+            info('Cobrança de cartão em processamento.', 'Em Processamento');
+          }
         }
       }
     } catch (err: any) {
-      error(err.message || 'Falha ao iniciar pagamento Asaas.', 'Erro no Checkout');
+      error(err.message || 'Falha ao processar pagamento com Asaas.', 'Erro no Checkout');
     } finally {
       setIsCheckingOut(false);
     }
@@ -598,22 +784,37 @@ export const PlansPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4 text-center py-4">
-                  <CreditCard className="h-12 w-12 text-primary mx-auto" />
-                  <h3 className="font-bold text-sm text-foreground">Fatura de Cartão Gerada com Sucesso</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Para garantir sua segurança total e conformidade PCI, o pagamento de cartão é processado na fatura oficial e protegida do Asaas.
+                  <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <Clock className="h-6 w-6 animate-pulse" />
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground">Pagamento em Processamento</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    Sua transação com cartão de crédito foi registrada e está em verificação pela operadora.
+                    Assim que confirmada, seus {selectedItem.credits} créditos entrarão automaticamente no seu saldo.
                   </p>
-                  <div className="pt-2">
-                    <a
-                      href={checkoutResult.invoiceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block w-full"
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedItem(null);
+                        navigate('/studio');
+                      }}
+                      leftIcon={<Sparkles className="h-4 w-4" />}
                     >
-                      <Button variant="primary" fullWidth rightIcon={<ExternalLink className="h-4 w-4" />}>
-                        Abrir Fatura Segura no Asaas
-                      </Button>
-                    </a>
+                      Ir para o Estúdio
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedItem(null);
+                        navigate('/wallet');
+                      }}
+                      rightIcon={<Coins className="h-4 w-4" />}
+                    >
+                      Acompanhar na Carteira
+                    </Button>
                   </div>
                 </div>
               )}
@@ -667,13 +868,110 @@ export const PlansPage: React.FC = () => {
                 </div>
               </div>
 
-              <Input
-                label="CPF ou CNPJ (obrigatório para emissão de nota)"
-                placeholder="000.000.000-00"
-                value={cpfCnpj}
-                onChange={(e) => setCpfCnpj(e.target.value)}
-                helperText="Exigência regulatória do Banco Central / Asaas para emissão de cobrança"
-              />
+              {billingType === 'PIX' ? (
+                <Input
+                  label="CPF ou CNPJ (obrigatório para emissão de Pix)"
+                  placeholder="000.000.000-00"
+                  value={cpfCnpj}
+                  onChange={(e) => setCpfCnpj(formatCpfCnpj(e.target.value))}
+                  helperText="Exigência regulatória do Banco Central para emissão do QR Code Pix"
+                  required
+                />
+              ) : (
+                <div className="space-y-3 p-3.5 bg-secondary/30 rounded-xl border border-border/80">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      Cartão de Crédito Transparente
+                    </span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      Checkout Seguro Asaas
+                    </span>
+                  </div>
+
+                  <Input
+                    label="Número do Cartão"
+                    placeholder="0000 0000 0000 0000"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    required
+                  />
+
+                  <Input
+                    label="Nome Impresso no Cartão"
+                    placeholder="NOME COMO NO CARTÃO"
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
+                    required
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      label="Validade (Mês/Ano)"
+                      placeholder="MM/AA"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                      required
+                    />
+                    <Input
+                      label="CVV / Código"
+                      placeholder="123"
+                      type="password"
+                      maxLength={4}
+                      value={cardCcv}
+                      onChange={(e) => setCardCcv(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      label="CPF ou CNPJ do Titular"
+                      placeholder="000.000.000-00"
+                      value={cardHolderCpf}
+                      onChange={(e) => setCardHolderCpf(formatCpfCnpj(e.target.value))}
+                      required
+                    />
+                    <Input
+                      label="WhatsApp / Telefone"
+                      placeholder="(00) 00000-0000"
+                      value={cardPhone}
+                      onChange={(e) => setCardPhone(formatPhone(e.target.value))}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1">
+                      <Input
+                        label="CEP"
+                        placeholder="00000-000"
+                        value={cardPostalCode}
+                        onChange={(e) => setCardPostalCode(formatCep(e.target.value))}
+                        required
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Input
+                        label="Número"
+                        placeholder="123"
+                        value={cardAddressNumber}
+                        onChange={(e) => setCardAddressNumber(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Input
+                        label="Comp. (opcional)"
+                        placeholder="Apto/Sala"
+                        value={cardAddressComplement}
+                        onChange={(e) => setCardAddressComplement(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Consentimento Obrigatório de Termos e Privacidade no Checkout */}
               <div className="pt-2 border-t border-border/60">
@@ -722,10 +1020,12 @@ export const PlansPage: React.FC = () => {
                   variant="gold"
                   fullWidth
                   isLoading={isCheckingOut}
-                  loadingText="Gerando fatura Asaas..."
+                  loadingText={billingType === 'PIX' ? 'Gerando QR Code Pix...' : 'Processando cartão com segurança...'}
                   leftIcon={billingType === 'PIX' ? <QrCode className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 >
-                  {billingType === 'PIX' ? 'Gerar QR Code Pix' : 'Prosseguir para Cartão'}
+                  {billingType === 'PIX'
+                    ? 'Gerar QR Code Pix'
+                    : `Pagar ${(selectedItem.priceCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} e Liberar Créditos`}
                 </Button>
                 <Button
                   type="button"
@@ -739,7 +1039,7 @@ export const PlansPage: React.FC = () => {
 
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground pt-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Intermediado pelo Asaas • Isenção total de tráfego de cartão</span>
+                <span>Processamento transparente direto Asaas • Criptografia bancária de ponta a ponta</span>
               </div>
             </form>
           )}

@@ -88,13 +88,34 @@ billingApp.get('/catalog', async (c) => {
   return c.json({ products, plans });
 });
 
-// ───────────────────────────── Checkout Pontual ─────────────────────────────
+// ───────────────────────────── Checkout Pontual e Transparente ─────────────────────────────
+const creditCardSchema = z.object({
+  holderName: z.string().min(2, 'Nome impresso no cartão obrigatório'),
+  number: z.string().min(13, 'Número de cartão inválido').max(19),
+  expiryMonth: z.string().min(1).max(2),
+  expiryYear: z.string().min(2).max(4),
+  ccv: z.string().min(3, 'CVV inválido').max(4),
+});
+
+const creditCardHolderInfoSchema = z.object({
+  name: z.string().min(2, 'Nome do titular obrigatório'),
+  email: z.string().email('E-mail do titular inválido'),
+  cpfCnpj: z.string().min(11, 'CPF/CNPJ do titular obrigatório'),
+  postalCode: z.string().min(8, 'CEP obrigatório'),
+  addressNumber: z.string().min(1, 'Número do endereço obrigatório'),
+  addressComplement: z.string().optional(),
+  phone: z.string().min(8, 'Telefone de contato obrigatório'),
+  mobilePhone: z.string().optional(),
+});
+
 const checkoutSchema = z.object({
   productCode: z.string().min(1, 'Código do produto obrigatório'),
   billingType: z.enum(['PIX', 'CREDIT_CARD']),
   cpfCnpj: z.string().optional(),
   name: z.string().optional(),
   phone: z.string().optional(),
+  creditCard: creditCardSchema.optional(),
+  creditCardHolderInfo: creditCardHolderInfoSchema.optional(),
 });
 
 billingApp.post('/checkout', requireAuth(), async (c) => {
@@ -107,6 +128,11 @@ billingApp.post('/checkout', requireAuth(), async (c) => {
 
   const body = await parseJson(c, checkoutSchema);
   const client = new AsaasClient(c.env);
+  const remoteIp =
+    c.req.header('cf-connecting-ip') ||
+    c.req.header('x-real-ip') ||
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+    '127.0.0.1';
 
   const result = await processCheckout(c.env, client, {
     userId: user.id,
@@ -115,6 +141,9 @@ billingApp.post('/checkout', requireAuth(), async (c) => {
     cpfCnpj: body.cpfCnpj,
     name: body.name,
     phone: body.phone,
+    creditCard: body.creditCard,
+    creditCardHolderInfo: body.creditCardHolderInfo,
+    remoteIp,
     idempotencyKey,
   });
 
@@ -239,13 +268,15 @@ billingApp.get('/payments/:id', requireAuth(), async (c) => {
   });
 });
 
-// ───────────────────────────── Assinaturas ─────────────────────────────
+// ───────────────────────────── Assinaturas Recorrentes Transparentes ─────────────────────────────
 const subscriptionSchema = z.object({
   planCode: z.string().min(1, 'Código do plano obrigatório'),
   billingType: z.enum(['PIX', 'CREDIT_CARD']),
   cpfCnpj: z.string().optional(),
   name: z.string().optional(),
   phone: z.string().optional(),
+  creditCard: creditCardSchema.optional(),
+  creditCardHolderInfo: creditCardHolderInfoSchema.optional(),
 });
 
 billingApp.post('/subscriptions', requireAuth(), async (c) => {
@@ -258,6 +289,11 @@ billingApp.post('/subscriptions', requireAuth(), async (c) => {
 
   const body = await parseJson(c, subscriptionSchema);
   const client = new AsaasClient(c.env);
+  const remoteIp =
+    c.req.header('cf-connecting-ip') ||
+    c.req.header('x-real-ip') ||
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+    '127.0.0.1';
 
   const result = await createSubscription(c.env, client, {
     userId: user.id,
@@ -266,6 +302,9 @@ billingApp.post('/subscriptions', requireAuth(), async (c) => {
     cpfCnpj: body.cpfCnpj,
     name: body.name,
     phone: body.phone,
+    creditCard: body.creditCard,
+    creditCardHolderInfo: body.creditCardHolderInfo,
+    remoteIp,
     idempotencyKey,
   });
 

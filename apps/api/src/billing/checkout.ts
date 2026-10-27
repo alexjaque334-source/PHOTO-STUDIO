@@ -8,8 +8,9 @@
  * - Redirecionamento de cartão via invoiceUrl hospedado do Asaas
  */
 import type { Env } from '../env';
-import { AsaasClient } from './asaas-client';
+import { AsaasClient, type AsaasCreditCard, type AsaasCreditCardHolderInfo } from './asaas-client';
 import { getOrCreateAsaasCustomer } from './customer-manager';
+import { createWalletService } from '../wallet';
 import { newId, nowIso, addDays } from '../lib/http';
 import { DomainError } from '../contracts';
 
@@ -20,6 +21,9 @@ export interface CheckoutInput {
   cpfCnpj?: string;
   name?: string;
   phone?: string;
+  creditCard?: AsaasCreditCard;
+  creditCardHolderInfo?: AsaasCreditCardHolderInfo;
+  remoteIp?: string;
   idempotencyKey: string;
 }
 
@@ -29,6 +33,7 @@ export interface CheckoutResult {
   valueCents: number;
   credits: number;
   invoiceUrl?: string;
+  creditsGranted?: boolean;
   pix?: {
     encodedImage: string;
     payload: string;
@@ -132,7 +137,37 @@ export async function processCheckout(
     dueDate,
     description: `Photo Studio AI - ${product.name} (${product.credits} créditos)`,
     externalReference: internalPaymentId,
+    creditCard: input.creditCard,
+    creditCardHolderInfo: input.creditCardHolderInfo,
+    remoteIp: input.remoteIp,
   });
+
+  const isApproved = ['CONFIRMED', 'RECEIVED'].includes(asaasPayment.status);
+  let paidAt: string | null = null;
+  let creditsGrantedAt: string | null = null;
+
+  // Se o pagamento por cartão foi aprovado instantaneamente, libera os créditos imediatamente
+  if (isApproved) {
+    paidAt = now;
+    creditsGrantedAt = now;
+    const walletService = createWalletService(env);
+    let validityDays = 30;
+    if (product.credit_validity_days) {
+      validityDays = product.credit_validity_days;
+    }
+    const expiresAt = addDays(now, validityDays);
+    await walletService.grant({
+      userId,
+      bucket: 'purchased',
+      amount: product.credits,
+      type: product.kind === 'single_edit' ? 'grant_single_edit' : 'grant_purchase',
+      sourceType: 'payment',
+      sourceId: internalPaymentId,
+      expiresAt,
+      idempotencyKey: `grant:payment:${internalPaymentId}`,
+      note: `Pagamento instantâneo via Cartão confirmado (${product.name})`,
+    });
+  }
 
   // 5. Se for Pix, obtém o QR Code e Payload
   let pixData: { encodedImage: string; payload: string; expirationDate: string } | undefined = undefined;
@@ -153,7 +188,7 @@ export async function processCheckout(
         id, user_id, asaas_payment_id, external_reference, kind, product_id, subscription_id,
         billing_type, value_cents, net_value_cents, credits, status, due_date, paid_at,
         invoice_url, credits_granted_at, credits_reversed_at, idempotency_key, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
     )
     .bind(
       internalPaymentId,
@@ -168,7 +203,9 @@ export async function processCheckout(
       product.credits,
       asaasPayment.status,
       asaasPayment.dueDate,
+      paidAt,
       asaasPayment.invoiceUrl ?? null,
+      creditsGrantedAt,
       idempotencyKey,
       now,
       now,
@@ -180,6 +217,7 @@ export async function processCheckout(
     status: asaasPayment.status,
     valueCents: product.price_cents,
     credits: product.credits,
+    creditsGranted: isApproved,
     invoiceUrl: asaasPayment.invoiceUrl,
     pix: pixData,
   };
