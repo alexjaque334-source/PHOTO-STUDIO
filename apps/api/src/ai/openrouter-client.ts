@@ -124,27 +124,40 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
   if (choice) {
     const message = choice.message;
 
-    // 2. Campo explícito `images` (array de { url } ou strings)
+    // 2. Campo explícito `images` (array de { image_url: { url } }, { url }, { b64_json } ou strings)
     if (Array.isArray(message?.images) && message.images.length > 0) {
-      const firstImg = message.images[0];
-      const urlStr = typeof firstImg === 'string' ? firstImg : firstImg.url;
-      if (urlStr) {
-        if (urlStr.startsWith('data:image/')) return { type: 'base64', data: urlStr };
-        return { type: 'url', data: urlStr };
+      for (const img of message.images) {
+        if (!img) continue;
+        if (typeof img === 'string') {
+          if (img.startsWith('data:image/')) return { type: 'base64', data: img };
+          return { type: 'url', data: img };
+        }
+        if (img.b64_json) {
+          return { type: 'base64', data: img.b64_json };
+        }
+        const candidateUrl = img.image_url?.url || img.image_url || img.url;
+        if (typeof candidateUrl === 'string' && candidateUrl) {
+          if (candidateUrl.startsWith('data:image/')) return { type: 'base64', data: candidateUrl };
+          return { type: 'url', data: candidateUrl };
+        }
       }
     }
 
     // 3. Conteúdo como array de blocos multimodais
     if (Array.isArray(message?.content)) {
       for (const part of message.content) {
-        if (part.type === 'image_url' && part.image_url?.url) {
-          const urlStr = part.image_url.url;
-          if (urlStr.startsWith('data:image/')) return { type: 'base64', data: urlStr };
-          return { type: 'url', data: urlStr };
+        if (part.type === 'image_url' && (part.image_url?.url || part.image_url)) {
+          const urlStr = part.image_url?.url || part.image_url;
+          if (typeof urlStr === 'string') {
+            if (urlStr.startsWith('data:image/')) return { type: 'base64', data: urlStr };
+            return { type: 'url', data: urlStr };
+          }
         }
-        if (part.type === 'image' && (part.source?.data || part.url)) {
+        if (part.type === 'image') {
           if (part.source?.data) return { type: 'base64', data: part.source.data };
-          if (part.url) return { type: 'url', data: part.url };
+          if (part.b64_json) return { type: 'base64', data: part.b64_json };
+          const imgUrl = part.url || part.source?.url;
+          if (imgUrl) return { type: 'url', data: imgUrl };
         }
       }
     }
@@ -152,10 +165,10 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
     // 4. Conteúdo como string de texto (procura por Data URL ou URL em markdown)
     if (typeof message?.content === 'string') {
       const text = message.content;
-      // Data URL direta ou em markdown
-      const dataUrlMatch = text.match(/data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]+/);
+      // Data URL direta ou em markdown (suportando quebras de linha em base64)
+      const dataUrlMatch = text.match(/data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=\r\n]+/);
       if (dataUrlMatch) {
-        return { type: 'base64', data: dataUrlMatch[0] };
+        return { type: 'base64', data: dataUrlMatch[0].replace(/[\r\n\s]+/g, '') };
       }
 
       // Markdown image: ![...](https://...)
@@ -240,10 +253,10 @@ export class OpenRouterClient {
           content: contentArray,
         },
       ],
-      modalities: ['text', 'image'],
+      modalities: ['image', 'text'],
       provider: {
-        data_collection: 'deny',
-        zdr: true,
+        order: ['Google', 'google-vertex', 'google-ai-studio'],
+        allow_fallbacks: true,
       },
     };
 
@@ -292,33 +305,37 @@ export class OpenRouterClient {
         errorBody = await response.text();
       }
 
+      const upstreamMsg =
+        errorBody?.error?.message ||
+        errorBody?.message ||
+        (typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody));
+
       if (response.status === 429 || response.status === 502 || response.status === 503 || response.status === 504) {
         throw new DomainError(
           'AI_UNAVAILABLE',
-          'Provedor de IA temporariamente indisponível ou com limite atingido. Tentando novamente...',
+          `Provedor de IA temporariamente indisponível: ${upstreamMsg}`,
           response.status,
           { retryable: true, upstream: errorBody },
         );
       }
 
       if (response.status === 400 || response.status === 422) {
-        const errorMsg = typeof errorBody === 'object' ? JSON.stringify(errorBody) : String(errorBody);
-        if (/safety|moderation|policy|nsfw|harmful/i.test(errorMsg)) {
+        if (/safety|moderation|policy|nsfw|harmful/i.test(upstreamMsg)) {
           throw new DomainError('AI_CONTENT_REFUSED', 'O conteúdo da imagem ou texto foi recusado pelos filtros de segurança.', 422, { retryable: false, upstream: errorBody });
         }
         // Erro de parâmetro ou modelo no OpenRouter: permite tentar modelo de fallback
-        throw new DomainError('AI_UNAVAILABLE', `Modelo de IA recusou a requisição (HTTP ${response.status}). Tentando modelo alternativo...`, response.status, { retryable: true, upstream: errorBody });
+        throw new DomainError('AI_UNAVAILABLE', `Modelo de IA recusou a requisição (HTTP ${response.status}): ${upstreamMsg}`, response.status, { retryable: true, upstream: errorBody });
       }
 
       if (response.status === 404) {
-        throw new DomainError('AI_UNAVAILABLE', 'Modelo de IA não encontrado no provedor. Tentando modelo alternativo...', 404, { retryable: true, upstream: errorBody });
+        throw new DomainError('AI_UNAVAILABLE', `Modelo de IA não encontrado no provedor (HTTP 404): ${upstreamMsg}`, 404, { retryable: true, upstream: errorBody });
       }
 
       throw new DomainError(
         'AI_ERROR',
-        `Erro retornado pelo OpenRouter (HTTP ${response.status}).`,
+        `Erro retornado pelo OpenRouter (HTTP ${response.status}): ${upstreamMsg}`,
         response.status,
-        { retryable: false, upstream: errorBody },
+        { retryable: true, upstream: errorBody },
       );
     }
 

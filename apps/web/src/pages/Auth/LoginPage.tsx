@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import {
   Logo,
   Card,
@@ -19,6 +19,8 @@ import { useAuth } from '@/lib/auth-context';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const { login, verifyMfa, mfaRequired: contextMfaRequired } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -28,7 +30,7 @@ export const LoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [mfaStep, setMfaStep] = useState(false);
 
-  const from = (location.state as any)?.from?.pathname || '/dashboard';
+  const customPath = redirectParam || (location.state as any)?.from?.pathname;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,6 @@ export const LoginPage: React.FC = () => {
       if (res.mfaRequired) {
         setMfaStep(true);
       } else {
-        const customPath = (location.state as any)?.from?.pathname;
         const isAdminUser = res.user?.roles?.includes('admin') || email.toLowerCase().trim() === 'apacessoria25@gmail.com';
         if (customPath && customPath !== '/auth/login') {
           navigate(customPath, { replace: true });
@@ -64,7 +65,6 @@ export const LoginPage: React.FC = () => {
 
     try {
       await verifyMfa(mfaCode.trim());
-      const customPath = (location.state as any)?.from?.pathname;
       const isAdminUser = email.toLowerCase().trim() === 'apacessoria25@gmail.com';
       if (customPath && customPath !== '/auth/login') {
         navigate(customPath, { replace: true });

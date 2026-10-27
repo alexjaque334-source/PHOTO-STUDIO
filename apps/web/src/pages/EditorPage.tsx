@@ -986,9 +986,19 @@ export const EditorPage: React.FC = () => {
             </div>
 
             {quoteData.balance.available < quoteData.credits && (
-              <Alert variant="danger">
-                Você não possui créditos suficientes. Adquira mais créditos na carteira para realizar esta edição.
-              </Alert>
+              <div className="space-y-2">
+                <Alert variant="danger">
+                  Você não possui créditos suficientes para esta edição.
+                </Alert>
+                <Button
+                  variant="gold"
+                  fullWidth
+                  onClick={() => navigate('/pricing?tab=packs&item=single_edit')}
+                  leftIcon={<Coins className="h-4 w-4" />}
+                >
+                  Recarregar a partir de R$ 7,90
+                </Button>
+              </div>
             )}
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">

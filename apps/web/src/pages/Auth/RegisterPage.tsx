@@ -22,6 +22,7 @@ export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedItemName = searchParams.get('item');
+  const redirectParam = searchParams.get('redirect');
   const { register } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -131,7 +132,13 @@ export const RegisterPage: React.FC = () => {
                 <Button
                   variant="primary"
                   fullWidth
-                  onClick={() => navigate('/auth/login')}
+                  onClick={() =>
+                    navigate(
+                      redirectParam
+                        ? `/auth/login?redirect=${encodeURIComponent(redirectParam)}`
+                        : '/auth/login'
+                    )
+                  }
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
                   Ir para o Login

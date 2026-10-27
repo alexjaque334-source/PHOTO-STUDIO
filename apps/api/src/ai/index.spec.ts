@@ -163,7 +163,7 @@ describe('Modelos e Tiers (models.ts)', () => {
 
     const quotePrem = await getQuoteForTier(fakeEnv, 'premium');
     expect(quotePrem.credits).toBe(2);
-    expect(quotePrem.modelLabel).toContain('FLUX');
+    expect(quotePrem.modelLabel).toContain('Gemini');
   });
 });
 

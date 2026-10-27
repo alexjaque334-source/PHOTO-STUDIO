@@ -668,13 +668,14 @@ export const LandingPage: React.FC = () => {
                           ];
                         })()}
                         buttonText={isAuthenticated ? 'Adquirir Créditos' : 'Comprar Agora'}
-                        onSelect={() =>
-                          navigate(
-                            isAuthenticated
-                              ? '/pricing'
-                              : `/auth/register?item=${encodeURIComponent(prod.name)}`
-                          )
-                        }
+                        onSelect={() => {
+                          const target = `/pricing?tab=packs&item=${encodeURIComponent(prod.code)}`;
+                          if (isAuthenticated) {
+                            navigate(target);
+                          } else {
+                            navigate(`/auth/login?redirect=${encodeURIComponent(target)}`);
+                          }
+                        }}
                       />
                     );
                   })}
@@ -765,13 +766,14 @@ export const LandingPage: React.FC = () => {
                         ];
                       })()}
                       buttonText={isAuthenticated ? 'Assinar no Painel' : `Assinar ${plan.name}`}
-                      onSelect={() =>
-                        navigate(
-                          isAuthenticated
-                            ? '/pricing'
-                            : `/auth/register?item=${encodeURIComponent(plan.name)}`
-                        )
-                      }
+                      onSelect={() => {
+                        const target = `/pricing?tab=plans&item=${encodeURIComponent(plan.code)}`;
+                        if (isAuthenticated) {
+                          navigate(target);
+                        } else {
+                          navigate(`/auth/login?redirect=${encodeURIComponent(target)}`);
+                        }
+                      }}
                     />
                   );
                 })}

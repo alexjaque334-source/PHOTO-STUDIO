@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   PageHeader,
@@ -45,12 +45,16 @@ export const PlansPage: React.FC = () => {
   const { user, refreshWallet } = useAuth();
   const { success, error, info } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const tabParam = searchParams.get('tab');
+  const itemParam = searchParams.get('item');
 
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy'>('terms');
 
-  const [activeTab, setActiveTab] = useState<'plans' | 'packs'>('plans');
+  const [activeTab, setActiveTab] = useState<'plans' | 'packs'>(tabParam === 'packs' ? 'packs' : 'plans');
   const [products, setProducts] = useState<BillingProduct[]>([]);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +67,47 @@ export const PlansPage: React.FC = () => {
     credits: number;
     isSubscription: boolean;
   } | null>(null);
+
+  // Sincroniza tab da URL
+  useEffect(() => {
+    if (tabParam === 'packs' || tabParam === 'plans') {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  // Abre checkout automaticamente se houver item nos parâmetros da URL
+  useEffect(() => {
+    if (!itemParam || selectedItem) return;
+
+    const foundProduct = products.find(
+      (p) => p.code === itemParam || p.name?.toLowerCase().includes(itemParam.toLowerCase())
+    );
+    if (foundProduct) {
+      setActiveTab('packs');
+      setSelectedItem({
+        code: foundProduct.code,
+        name: foundProduct.name,
+        priceCents: foundProduct.priceCents,
+        credits: foundProduct.credits,
+        isSubscription: false,
+      });
+      return;
+    }
+
+    const foundPlan = plans.find(
+      (p) => p.code === itemParam || p.name?.toLowerCase().includes(itemParam.toLowerCase())
+    );
+    if (foundPlan) {
+      setActiveTab('plans');
+      setSelectedItem({
+        code: foundPlan.code,
+        name: foundPlan.name,
+        priceCents: foundPlan.priceCents,
+        credits: foundPlan.monthlyCredits,
+        isSubscription: true,
+      });
+    }
+  }, [itemParam, products, plans, selectedItem]);
 
   const [billingType, setBillingType] = useState<'PIX' | 'CREDIT_CARD'>('PIX');
   const [cpfCnpj, setCpfCnpj] = useState('');
@@ -268,7 +313,7 @@ export const PlansPage: React.FC = () => {
           clearInterval(interval);
           setTimeout(() => {
             setSelectedItem(null);
-            navigate('/account');
+            navigate('/studio');
           }, 2500);
         }
       } catch (err) {
@@ -473,7 +518,7 @@ export const PlansPage: React.FC = () => {
               </div>
               <h2 className="text-xl font-bold text-foreground">Pagamento Confirmado!</h2>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Parabéns! Seus {selectedItem.credits} créditos foram liberados e vinculados ao seu perfil. Redirecionando para seu perfil...
+                Parabéns! Seus {selectedItem.credits} créditos foram liberados e estão prontos para usar. Redirecionando para o estúdio...
               </p>
               <div className="pt-4 flex flex-col sm:flex-row gap-2">
                 <Button
@@ -481,22 +526,22 @@ export const PlansPage: React.FC = () => {
                   fullWidth
                   onClick={() => {
                     setSelectedItem(null);
-                    navigate('/account');
+                    navigate('/studio');
                   }}
-                  leftIcon={<UserIcon className="h-4 w-4" />}
+                  leftIcon={<Sparkles className="h-4 w-4" />}
                 >
-                  Ir para Meu Perfil
+                  Abrir Estúdio & Criar Fotos
                 </Button>
                 <Button
                   variant="secondary"
                   fullWidth
                   onClick={() => {
                     setSelectedItem(null);
-                    navigate('/dashboard');
+                    navigate('/wallet');
                   }}
-                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                  rightIcon={<Coins className="h-4 w-4" />}
                 >
-                  Ir para o Studio
+                  Ver Meus Créditos
                 </Button>
               </div>
             </div>
