@@ -293,9 +293,10 @@ authRoutes.post('/login', async (c) => {
   const mfaEnabled = Boolean(mfaRecord && mfaRecord.enabled_at);
 
   const isAdmin = roleNames.includes('admin');
-  const mfaRequired = mfaEnabled;
+  // 2FA/TOTP é reservado exclusivamente para fluxos críticos de redefinição de senha esquecida
+  const mfaRequired = false;
 
-  // Cria sessão (se mfaRequired for true, inicia com mfa_verified = false)
+  // Cria sessão (direto com mfa_verified = true)
   const reqInfo = {
     userAgent: c.req.header('user-agent'),
     ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for'),

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   PageHeader,
@@ -36,6 +37,7 @@ import {
   Lock,
   LogOut,
   Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api, UserSession } from '@/lib/api-client';
@@ -43,6 +45,16 @@ import { api, UserSession } from '@/lib/api-client';
 export const AccountPage: React.FC = () => {
   const { user, refreshUser, logout } = useAuth();
   const { success, error, info } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth/login');
+    } catch (err: any) {
+      error(err.message || 'Falha ao encerrar sessão.', 'Erro');
+    }
+  };
 
   // Estados de Perfil
   const [fullName, setFullName] = useState(user?.fullName || '');
@@ -212,10 +224,33 @@ export const AccountPage: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
+      {/* Barra Superior de Navegação & Logout no Perfil */}
+      <div className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-card border border-border shadow-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          leftIcon={<ArrowLeft className="h-4 w-4" />}
+          onClick={() => navigate('/dashboard')}
+          className="text-xs font-semibold"
+        >
+          Voltar ao Estúdio
+        </Button>
+
+        <Button
+          variant="danger"
+          size="sm"
+          leftIcon={<LogOut className="h-4 w-4" />}
+          onClick={handleLogout}
+          className="text-xs font-semibold"
+        >
+          Sair da Conta
+        </Button>
+      </div>
+
       <PageHeader
-        title="Minha Conta & Direitos LGPD"
-        description="Gerencie seus dados de acesso, sessões ativas e exerça seus direitos de titularidade de dados."
-        badge={<Badge variant="secondary">Titular Protegido</Badge>}
+        title="Minha Conta & Perfil"
+        description="Gerencie seus dados de acesso, sessões ativas e exerça seus direitos de privacidade."
+        badge={<Badge variant="secondary">Perfil Conectado</Badge>}
       />
 
       {/* Lembrete de Segurança MFA em Faixa Amarela */}

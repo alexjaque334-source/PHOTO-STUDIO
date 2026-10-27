@@ -336,7 +336,10 @@ export const AppShell: React.FC<AppShellProps> = ({
 
         <button
           type="button"
-          onClick={() => handleNavClick('/studio')}
+          onClick={() => {
+            const lastId = typeof window !== 'undefined' ? localStorage.getItem('ps_last_active_image_id') : null;
+            handleNavClick(lastId ? `/studio/${lastId}` : '/studio');
+          }}
           className={cn(
             'flex flex-col items-center justify-center flex-1 min-w-0 py-1 px-1 rounded-xl text-[11px] font-medium transition-all select-none',
             currentPath.startsWith('/studio')

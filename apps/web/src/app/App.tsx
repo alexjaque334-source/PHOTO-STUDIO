@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -19,26 +19,33 @@ import {
   CreditCard,
   User as UserIcon,
   ShieldAlert,
-  Sliders,
 } from 'lucide-react';
 
-// Páginas
+// Páginas de entrada imediata (não lazy para primeiro paint ultra-rápido)
 import { LandingPage } from '@/pages/LandingPage';
-import { TermsPage } from '@/pages/TermsPage';
-import { PrivacyPage } from '@/pages/PrivacyPage';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { RegisterPage } from '@/pages/Auth/RegisterPage';
-import { ForgotPasswordPage } from '@/pages/Auth/ForgotPasswordPage';
-import { ResetPasswordPage } from '@/pages/Auth/ResetPasswordPage';
-import { VerifyEmailPage } from '@/pages/Auth/VerifyEmailPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { EditorPage } from '@/pages/EditorPage';
-import { LibraryPage } from '@/pages/LibraryPage';
-import { WalletPage } from '@/pages/WalletPage';
-import { PlansPage } from '@/pages/PlansPage';
-import { AccountPage } from '@/pages/AccountPage';
-import { AdminPage } from '@/pages/AdminPage';
-import { DesignSystemPage } from '@/pages/DesignSystemPage';
+
+// Code-splitting inteligente: páginas pesadas carregadas sob demanda para máxima velocidade e leveza
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const EditorPage = lazy(() => import('@/pages/EditorPage').then((m) => ({ default: m.EditorPage })));
+const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
+const WalletPage = lazy(() => import('@/pages/WalletPage').then((m) => ({ default: m.WalletPage })));
+const PlansPage = lazy(() => import('@/pages/PlansPage').then((m) => ({ default: m.PlansPage })));
+const AccountPage = lazy(() => import('@/pages/AccountPage').then((m) => ({ default: m.AccountPage })));
+const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const TermsPage = lazy(() => import('@/pages/TermsPage').then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const ForgotPasswordPage = lazy(() => import('@/pages/Auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('@/pages/Auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
+const VerifyEmailPage = lazy(() => import('@/pages/Auth/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
+
+const PageLoadingFallback: React.FC = () => (
+  <div className="min-h-[50vh] flex flex-col items-center justify-center p-8 space-y-3">
+    <Spinner size="lg" className="text-primary" />
+    <span className="text-xs text-muted-foreground animate-pulse font-medium">Carregando estúdio...</span>
+  </div>
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +60,7 @@ const queryClient = new QueryClient({
  * Layout com AppShell conectado ao estado de autenticação e navegação do React Router
  */
 const AppShellLayout: React.FC = () => {
-  const { user, walletBalance, logout, isAdmin } = useAuth();
+  const { user, walletBalance, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -110,7 +117,9 @@ const AppShellLayout: React.FC = () => {
       }}
     >
       <ErrorBoundary>
-        <Outlet />
+        <Suspense fallback={<PageLoadingFallback />}>
+          <Outlet />
+        </Suspense>
       </ErrorBoundary>
     </AppShell>
   );
@@ -132,14 +141,16 @@ const AdminShellLayout: React.FC = () => {
       }}
     >
       <ErrorBoundary fallbackTitle="Cockpit Executivo">
-        <Outlet />
+        <Suspense fallback={<PageLoadingFallback />}>
+          <Outlet />
+        </Suspense>
       </ErrorBoundary>
     </AdminShell>
   );
 };
 
 /**
- * Rota Protegida: exige usuário autenticado
+ * Proteção de Rotas com Redirecionamento Inteligente
  */
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -197,15 +208,64 @@ export const App: React.FC = () => {
           <Routes>
             {/* ── Rotas Públicas ── */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/termos" element={<TermsPage />} />
-            <Route path="/termos-de-uso" element={<TermsPage />} />
-            <Route path="/privacidade" element={<PrivacyPage />} />
-            <Route path="/politica-de-privacidade" element={<PrivacyPage />} />
+            <Route
+              path="/termos"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TermsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/termos-de-uso"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TermsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/privacidade"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <PrivacyPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/politica-de-privacidade"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <PrivacyPage />
+                </Suspense>
+              }
+            />
             <Route path="/auth/login" element={<LoginPage />} />
             <Route path="/auth/register" element={<RegisterPage />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+            <Route
+              path="/auth/forgot-password"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ForgotPasswordPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/auth/reset-password"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ResetPasswordPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/auth/verify-email"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <VerifyEmailPage />
+                </Suspense>
+              }
+            />
 
             {/* ── Rotas Protegidas do Studio (Cliente) ── */}
             <Route element={<ProtectedRoute />}>

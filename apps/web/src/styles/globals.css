@@ -129,7 +129,6 @@ body {
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overflow-x: hidden;

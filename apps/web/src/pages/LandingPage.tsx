@@ -216,17 +216,17 @@ export const LandingPage: React.FC = () => {
                 size="sm"
                 onClick={() => navigate('/dashboard')}
                 rightIcon={<ArrowRight className="h-4 w-4" />}
-                className="text-xs px-2.5 sm:px-3 h-8"
+                className="text-xs px-3 h-8 font-semibold shadow-xs"
               >
-                Meu Studio
+                Meu Estúdio
               </Button>
             ) : (
-              <>
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate('/auth/login')}
-                  className="hidden md:inline-flex text-xs px-2"
+                  className="text-xs px-2.5 h-8 font-semibold text-foreground hover:bg-secondary/70 transition-colors"
                 >
                   Entrar
                 </Button>
@@ -234,12 +234,12 @@ export const LandingPage: React.FC = () => {
                   variant="primary"
                   size="sm"
                   onClick={() => navigate('/auth/register')}
-                  rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
-                  className="text-xs px-2.5 sm:px-3 h-8"
+                  rightIcon={<ArrowRight className="h-3 w-3" />}
+                  className="text-xs px-2.5 sm:px-3 h-8 font-semibold shadow-xs"
                 >
-                  Começar
+                  Criar Conta
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>

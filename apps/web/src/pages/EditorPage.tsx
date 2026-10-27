@@ -155,13 +155,38 @@ export const EditorPage: React.FC = () => {
 
   useEffect(() => {
     if (imageId) {
+      try {
+        localStorage.setItem('ps_last_active_image_id', imageId);
+      } catch {}
       loadImageData(imageId);
     } else {
-      setImage(null);
-      setVersions([]);
-      setActiveVersionId(null);
-      setActiveVersionUrl(null);
-      setOriginalVersionUrl(null);
+      // Se não há imageId na rota, recupera a última imagem ativa ou mais recente
+      const lastId = typeof window !== 'undefined' ? localStorage.getItem('ps_last_active_image_id') : null;
+      if (lastId) {
+        navigate(`/studio/${lastId}`, { replace: true });
+        return;
+      }
+      api.images.list({ limit: 1 }).then((res) => {
+        if (res.items && res.items.length > 0) {
+          const mostRecent = res.items[0];
+          try {
+            localStorage.setItem('ps_last_active_image_id', mostRecent.id);
+          } catch {}
+          navigate(`/studio/${mostRecent.id}`, { replace: true });
+        } else {
+          setImage(null);
+          setVersions([]);
+          setActiveVersionId(null);
+          setActiveVersionUrl(null);
+          setOriginalVersionUrl(null);
+        }
+      }).catch(() => {
+        setImage(null);
+        setVersions([]);
+        setActiveVersionId(null);
+        setActiveVersionUrl(null);
+        setOriginalVersionUrl(null);
+      });
     }
   }, [imageId]);
 
@@ -220,6 +245,7 @@ export const EditorPage: React.FC = () => {
 
       const res = await api.images.upload(file, thumbBlob);
       success(`Foto "${file.name}" carregada no estúdio!`, 'Upload Concluído');
+      try { localStorage.setItem('ps_last_active_image_id', res.image.id); } catch {}
       navigate(`/studio/${res.image.id}`);
     } catch (err: any) {
       error(err.message || 'Falha no upload da foto.', 'Erro de Upload');
