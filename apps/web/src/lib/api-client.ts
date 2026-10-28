@@ -657,7 +657,8 @@ export const api = {
   billing: {
     async getCatalog() {
       return request<{ products: BillingProduct[]; plans: BillingPlan[] }>(
-        '/api/billing/catalog'
+        `/api/billing/catalog?_t=${Date.now()}`,
+        { cache: 'no-store' }
       );
     },
 

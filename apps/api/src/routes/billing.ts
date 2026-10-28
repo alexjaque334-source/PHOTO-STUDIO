@@ -27,6 +27,9 @@ const billingApp = new Hono<AppContext>();
 
 // ───────────────────────────── Catálogo Público ─────────────────────────────
 billingApp.get('/catalog', async (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
   const db = c.env.DB;
 
   const [productsRes, plansRes] = await Promise.all([

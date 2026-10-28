@@ -133,9 +133,16 @@ export const EditorPage: React.FC = () => {
       setImage(data.image);
       setVersions(data.versions);
 
+      const savedVerId = typeof window !== 'undefined' ? localStorage.getItem(`ps_active_ver_${id}`) : null;
       const targetVersionId =
-        selectVersionId || data.image.currentVersionId || data.versions[0]?.id;
+        selectVersionId ||
+        (savedVerId && data.versions.some((v) => v.id === savedVerId) ? savedVerId : null) ||
+        data.image.currentVersionId ||
+        data.versions[0]?.id;
       setActiveVersionId(targetVersionId);
+      try {
+        if (targetVersionId) localStorage.setItem(`ps_active_ver_${id}`, targetVersionId);
+      } catch {}
 
       // Obter URLs assinadas para a versão ativa e a original (v1)
       const v1 = data.versions.find((v) => v.versionNumber === 1) || data.versions[0];
@@ -224,6 +231,9 @@ export const EditorPage: React.FC = () => {
   const handleSelectVersion = async (version: ImageVersion) => {
     if (!image) return;
     setActiveVersionId(version.id);
+    try {
+      localStorage.setItem(`ps_active_ver_${image.id}`, version.id);
+    } catch {}
     try {
       const res = await api.images.getVersionUrl(image.id, version.id);
       setActiveVersionUrl(res.url);

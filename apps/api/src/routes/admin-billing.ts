@@ -27,6 +27,9 @@ adminBillingApp.use('*', requireAuth(), requireAdmin());
 
 // ───────────────────────────── Gestão de Produtos ─────────────────────────────
 adminBillingApp.get('/products', async (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
   const db = c.env.DB;
   const products = await db
     .prepare('SELECT * FROM products ORDER BY sort_order ASC, price_cents ASC')
@@ -52,9 +55,9 @@ adminBillingApp.put('/products/:id', async (c) => {
   const db = c.env.DB;
 
   const current = await db
-    .prepare('SELECT id, code, name, price_cents, credits FROM products WHERE id = ?')
-    .bind(productId)
-    .first();
+    .prepare('SELECT id, code, name, price_cents, credits FROM products WHERE id = ? OR code = ?')
+    .bind(productId, productId)
+    .first<{ id: string; code: string; name: string; price_cents: number; credits: number }>();
 
   if (!current) {
     throw new DomainError('PRODUCT_NOT_FOUND', 'Produto não encontrado.', 404);
@@ -74,7 +77,7 @@ adminBillingApp.put('/products/:id', async (c) => {
            sort_order = COALESCE(?, sort_order),
            updated_at = ?,
            updated_by = ? 
-       WHERE id = ?`,
+       WHERE id = ? OR code = ?`,
     )
     .bind(
       body.name ?? null,
@@ -86,6 +89,7 @@ adminBillingApp.put('/products/:id', async (c) => {
       body.sortOrder ?? null,
       now,
       admin.id,
+      productId,
       productId,
     )
     .run();
@@ -178,15 +182,15 @@ adminBillingApp.delete('/products/:id', async (c) => {
   const db = c.env.DB;
 
   const current = await db
-    .prepare('SELECT id, code, name FROM products WHERE id = ?')
-    .bind(productId)
+    .prepare('SELECT id, code, name FROM products WHERE id = ? OR code = ?')
+    .bind(productId, productId)
     .first<{ id: string; code: string; name: string }>();
 
   if (!current) {
     throw new DomainError('PRODUCT_NOT_FOUND', 'Produto não encontrado.', 404);
   }
 
-  await db.prepare('DELETE FROM products WHERE id = ?').bind(productId).run();
+  await db.prepare('DELETE FROM products WHERE id = ? OR code = ?').bind(productId, productId).run();
 
   await audit(c.env, {
     actorUserId: admin.id,
@@ -202,6 +206,9 @@ adminBillingApp.delete('/products/:id', async (c) => {
 
 // ───────────────────────────── Gestão de Planos ─────────────────────────────
 adminBillingApp.get('/plans', async (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  c.header('Pragma', 'no-cache');
+  c.header('Expires', '0');
   const db = c.env.DB;
   const plans = await db
     .prepare('SELECT * FROM plans ORDER BY sort_order ASC, price_cents ASC')
@@ -226,8 +233,8 @@ adminBillingApp.put('/plans/:id', async (c) => {
   const db = c.env.DB;
 
   const current = await db
-    .prepare('SELECT id, code FROM plans WHERE id = ?')
-    .bind(planId)
+    .prepare('SELECT id, code FROM plans WHERE id = ? OR code = ?')
+    .bind(planId, planId)
     .first();
 
   if (!current) {
@@ -247,7 +254,7 @@ adminBillingApp.put('/plans/:id', async (c) => {
            sort_order = COALESCE(?, sort_order),
            updated_at = ?,
            updated_by = ? 
-       WHERE id = ?`,
+       WHERE id = ? OR code = ?`,
     )
     .bind(
       body.name ?? null,
@@ -258,6 +265,7 @@ adminBillingApp.put('/plans/:id', async (c) => {
       body.sortOrder ?? null,
       now,
       admin.id,
+      planId,
       planId,
     )
     .run();
@@ -345,15 +353,15 @@ adminBillingApp.delete('/plans/:id', async (c) => {
   const db = c.env.DB;
 
   const current = await db
-    .prepare('SELECT id, code, name FROM plans WHERE id = ?')
-    .bind(planId)
+    .prepare('SELECT id, code, name FROM plans WHERE id = ? OR code = ?')
+    .bind(planId, planId)
     .first<{ id: string; code: string; name: string }>();
 
   if (!current) {
     throw new DomainError('PLAN_NOT_FOUND', 'Plano não encontrado.', 404);
   }
 
-  await db.prepare('DELETE FROM plans WHERE id = ?').bind(planId).run();
+  await db.prepare('DELETE FROM plans WHERE id = ? OR code = ?').bind(planId, planId).run();
 
   await audit(c.env, {
     actorUserId: admin.id,

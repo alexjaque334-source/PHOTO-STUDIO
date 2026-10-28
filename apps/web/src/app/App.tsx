@@ -109,7 +109,7 @@ const AppShellLayout: React.FC = () => {
       user={{
         fullName: user?.fullName || 'Usuário Studio',
         email: user?.email || '',
-        isAdmin: false,
+        isAdmin: Boolean(user?.roles?.includes('admin')),
       }}
       creditsBalance={{
         available: walletBalance?.available ?? 0,

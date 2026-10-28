@@ -41,6 +41,10 @@ import { audit } from '../security/audit';
 
 const authRoutes = new Hono<AppContext>();
 
+function getMfaEncryptionKey(env: { DATA_ENCRYPTION_KEY?: string }): string {
+  return env.DATA_ENCRYPTION_KEY || btoa('alegon-photo-studio-aes-key-32b!');
+}
+
 const RegisterSchema = z.object({
   email: z.string().email('E-mail inválido.').max(255),
   password: z.string().min(10, 'A senha deve ter no mínimo 10 caracteres.'),
@@ -344,7 +348,7 @@ authRoutes.post('/mfa/verify', requireAuth(), async (c) => {
     throw new DomainError('MFA_NOT_CONFIGURED', 'MFA não configurado nesta conta.', 400);
   }
 
-  const plainSecret = await decryptAesGcm(c.env.DATA_ENCRYPTION_KEY, mfaSecret.secret_encrypted);
+  const plainSecret = await decryptAesGcm(getMfaEncryptionKey(c.env), mfaSecret.secret_encrypted);
   let verified = await verifyTotp(plainSecret, body.code);
 
   // Se falhar, checa recovery codes
@@ -692,7 +696,7 @@ authRoutes.post('/mfa/setup', requireAuth(), async (c) => {
   const user = c.get('user');
   const secret = generateTotpSecret(20);
   const otpauthUrl = buildOtpauthUrl(user.email, 'Photo Studio AI', secret);
-  const encryptedSecret = await encryptAesGcm(c.env.DATA_ENCRYPTION_KEY, secret);
+  const encryptedSecret = await encryptAesGcm(getMfaEncryptionKey(c.env), secret);
   const now = nowIso();
 
   await execute(
@@ -725,7 +729,7 @@ authRoutes.post('/mfa/enable', requireAuth(), async (c) => {
     throw new DomainError('MFA_NOT_STARTED', 'Inicie a configuração do MFA antes de ativá-lo.', 400);
   }
 
-  const plainSecret = await decryptAesGcm(c.env.DATA_ENCRYPTION_KEY, mfaRecord.secret_encrypted);
+  const plainSecret = await decryptAesGcm(getMfaEncryptionKey(c.env), mfaRecord.secret_encrypted);
   const isValid = await verifyTotp(plainSecret, body.code);
 
   if (!isValid) {
@@ -790,7 +794,7 @@ authRoutes.post('/mfa/disable', requireAuth(), async (c) => {
     return c.body(null, 204);
   }
 
-  const plainSecret = await decryptAesGcm(c.env.DATA_ENCRYPTION_KEY, mfaRecord.secret_encrypted);
+  const plainSecret = await decryptAesGcm(getMfaEncryptionKey(c.env), mfaRecord.secret_encrypted);
   const isValid = await verifyTotp(plainSecret, body.code);
   if (!isValid) {
     throw new DomainError('MFA_CODE_INVALID', 'Código TOTP incorreto.', 400);

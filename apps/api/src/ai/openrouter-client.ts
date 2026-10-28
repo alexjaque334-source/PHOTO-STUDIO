@@ -120,7 +120,16 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
     if (item.url) return { type: 'url', data: item.url };
   }
 
+  if (json.candidates?.[0]?.finishReason === 'SAFETY') {
+    throw new DomainError('AI_CONTENT_REFUSED', 'O filtro de segurança da IA (Content Filter) recusou a geração.', 422, { retryable: false });
+  }
+
   const choice = json.choices?.[0];
+  if (choice?.finish_reason === 'content_filter' || choice?.finish_reason === 'safety') {
+    const msg = choice.message?.content || 'O filtro de segurança da IA (Content Filter) recusou a geração.';
+    throw new DomainError('AI_CONTENT_REFUSED', `Filtro de segurança ativado: ${msg}`, 422, { retryable: false });
+  }
+
   if (choice) {
     const message = choice.message;
 
@@ -159,6 +168,12 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
           const imgUrl = part.url || part.source?.url;
           if (imgUrl) return { type: 'url', data: imgUrl };
         }
+        if (part.inline_data?.data) {
+          return { type: 'base64', data: part.inline_data.data };
+        }
+        if (part.inlineData?.data) {
+          return { type: 'base64', data: part.inlineData.data };
+        }
       }
     }
 
@@ -185,6 +200,16 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
     }
   }
 
+  // 5. Suporte direto a candidatos retornados via Google AI Studio / Vertex passthrough
+  const candidate = json.candidates?.[0];
+  if (candidate?.content?.parts && Array.isArray(candidate.content.parts)) {
+    for (const part of candidate.content.parts) {
+      if (part.inline_data?.data) return { type: 'base64', data: part.inline_data.data };
+      if (part.inlineData?.data) return { type: 'base64', data: part.inlineData.data };
+      if (part.text && part.text.startsWith('data:image/')) return { type: 'base64', data: part.text };
+    }
+  }
+
   throw new DomainError(
     'AI_INVALID_OUTPUT',
     'O modelo não retornou uma imagem legível.',
@@ -203,7 +228,8 @@ export class OpenRouterClient {
 
   constructor(env: Env) {
     this.baseUrl = (env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
-    this.apiKey = env.OPENROUTER_API_KEY || '';
+    const cleanKey = (env.OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+    this.apiKey = cleanKey.startsWith('Bearer ') ? cleanKey.slice(7).trim() : cleanKey;
     this.appUrl = env.APP_URL || 'https://alegon.com.br';
   }
 
@@ -254,10 +280,6 @@ export class OpenRouterClient {
         },
       ],
       modalities: ['image', 'text'],
-      provider: {
-        order: ['Google', 'google-vertex', 'google-ai-studio'],
-        allow_fallbacks: true,
-      },
     };
 
     const startTime = performance.now();
@@ -309,6 +331,18 @@ export class OpenRouterClient {
         errorBody?.error?.message ||
         errorBody?.message ||
         (typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody));
+
+      if (response.status === 401) {
+        throw new DomainError('AI_UNAVAILABLE', `Chave da API OpenRouter inválida ou não autorizada (HTTP 401): ${upstreamMsg}. Verifique se a OPENROUTER_API_KEY foi devidamente configurada.`, 401, { retryable: false, upstream: errorBody });
+      }
+
+      if (response.status === 402) {
+        throw new DomainError('AI_UNAVAILABLE', `Saldo insuficiente na conta do OpenRouter (HTTP 402): ${upstreamMsg}. É necessário ter saldo em dólares/créditos (Credits balance) na conta do OpenRouter para processar imagens com este modelo.`, 402, { retryable: false, upstream: errorBody });
+      }
+
+      if (response.status === 403) {
+        throw new DomainError('AI_UNAVAILABLE', `Acesso negado ou limite atingido no OpenRouter (HTTP 403): ${upstreamMsg}. Verifique se a chave atingiu o limite de gastos configurado ou se há restrição de modelos na chave.`, 403, { retryable: false, upstream: errorBody });
+      }
 
       if (response.status === 429 || response.status === 502 || response.status === 503 || response.status === 504) {
         throw new DomainError(

@@ -162,6 +162,33 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
       // ignora se já criada
     }
 
+    // Garante modelos ativos atualizados para OpenRouter (incluindo Nano Banana 2.1 e Gemini 2.5 Flash Image)
+    try {
+      const nowModel = nowIso();
+      await db
+        .prepare(
+          `INSERT OR REPLACE INTO model_configurations (
+            id, tier, model_id, display_name, credits_cost, priority, active, supports_mask, params_json, validated_at, notes, updated_at, updated_by
+          ) VALUES 
+          (
+            'mod_gemini_2_5_flash_padrao', 'padrao', 'google/gemini-2.5-flash-image', 'ALEGON Studio Pro (Gemini Flash Image)',
+            1, 10, 1, 0, '{"temperature":0.2}', '2026-10-28T00:00:00Z', 'Modelo primário OpenRouter.', ?, 'system_update'
+          ),
+          (
+            'mod_gemini_nano_banana_2_1', 'padrao', 'google/gemini-nano-banana-2.1', 'ALEGON Studio Pro (Nano Banana 2.1)',
+            1, 15, 1, 0, '{"temperature":0.2}', '2026-10-28T00:00:00Z', 'Nano Banana 2.1 OpenRouter.', ?, 'system_update'
+          ),
+          (
+            'mod_gemini_3_1_flash_padrao', 'padrao', 'google/gemini-3.1-flash-image', 'ALEGON Studio Pro (Gemini 3.1 Flash)',
+            1, 20, 1, 0, '{"temperature":0.2}', '2026-10-28T00:00:00Z', 'Fallback 1 Padrão.', ?, 'system_update'
+          )`,
+        )
+        .bind(nowModel, nowModel, nowModel)
+        .run();
+    } catch {
+      // ignora
+    }
+
     // Auto-bootstrap do Super Administrador
     const adminEmail = (env.ADMIN_EMAILS ? env.ADMIN_EMAILS.split(',')[0]!.trim() : 'apacessoria25@gmail.com').toLowerCase();
     const adminPassword = env.ADMIN_PASSWORD || env.ADMIN_INITIAL_PASSWORD || env.PASSWORD || 'Admin@123456';
@@ -315,11 +342,6 @@ export async function ensureDatabaseSchema(env: Env): Promise<void> {
         .run();
 
       console.log(`[AutoMigrate] Conta de usuário ${clientUserEmail} configurada com sucesso e 50 créditos liberados!`);
-    } else {
-      await db
-        .prepare('UPDATE wallets SET purchased_balance = MAX(purchased_balance, 50), updated_at = ? WHERE user_id = ?')
-        .bind(now, existingClient.id)
-        .run();
     }
 
     isMigrated = true;

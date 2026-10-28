@@ -217,19 +217,11 @@ export async function processSingleEditJob(
     const errorCode = isDomain ? (err as DomainError).code : 'EDIT_FAILED';
     const errorMessage = err instanceof Error ? err.message : String(err);
 
-    // Falhas técnicas elegíveis para estorno/liberação de créditos
-    const isTechnicalFailure =
-      errorCode === 'AI_TIMEOUT' ||
-      errorCode === 'AI_UNAVAILABLE' ||
-      errorCode === 'AI_INVALID_OUTPUT' ||
-      errorCode === 'AI_ERROR' ||
-      errorCode === 'MEDIA_NOT_FOUND' ||
-      errorCode === 'SOURCE_NOT_FOUND';
-
-    if (job.reservation_id && isTechnicalFailure) {
+    // Em caso de qualquer falha na geração da foto, a reserva de créditos é 100% estornada/liberada
+    if (job.reservation_id) {
       try {
         const wallet = await getWalletService(env);
-        await wallet.release(job.reservation_id, `Falha técnica: ${errorMessage}`);
+        await wallet.release(job.reservation_id, `Estorno por não conclusão da imagem: ${errorMessage}`);
       } catch (releaseErr) {
         console.error(`[EditConsumer] Falha ao liberar reserva ${job.reservation_id}:`, releaseErr);
       }

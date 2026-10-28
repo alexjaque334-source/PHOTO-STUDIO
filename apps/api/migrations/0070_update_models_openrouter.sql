@@ -36,6 +36,21 @@ INSERT OR REPLACE INTO model_configurations (
     'system_update'
   ),
   (
+    'mod_gemini_nano_banana_2_1',
+    'padrao',
+    'google/gemini-nano-banana-2.1',
+    'ALEGON Studio Pro (Nano Banana 2.1)',
+    1,
+    15,
+    1,
+    0,
+    '{"temperature":0.2}',
+    '2026-10-28T00:00:00Z',
+    'Modelo Nano Banana 2.1 oficial do OpenRouter.',
+    datetime('now'),
+    'system_update'
+  ),
+  (
     'mod_gemini_3_1_flash_padrao',
     'padrao',
     'google/gemini-3.1-flash-image',
