@@ -735,10 +735,10 @@ export const COMMANDS_CATALOG: InternalCommand[] = [
   {
     id: 57,
     internalName: 'body_fire',
-    intent: 'Criar efeito fantástico de chamas cinematográficas envolvendo o corpo.',
-    userPhrases: ['Quero meu corpo pegando fogo', 'Me coloca com chamas nos braços', 'Fogo no corpo', 'Efeito de fogo cinematográfico'],
+    intent: 'Criar efeito cinematográfico de aura de energia luminosa e partículas brilhantes estilo cinema.',
+    userPhrases: ['Quero meu corpo pegando fogo', 'Me coloca com chamas nos braços', 'Fogo no corpo', 'Efeito de fogo cinematográfico', 'Aura mágica de energia'],
     technicalPrompt:
-      'VFX cinematic visual effect of magical glowing fiery aura and golden ember sparks illuminating the surrounding atmosphere. Safe superhero fantasy VFX style, beautiful artistic warm golden lighting. Maintain original person, facial identity, clothing, and expression intact.',
+      'Cinematic fantasy superhero visual effect (VFX): Harmless magical glowing golden energy aura, floating luminous sparks, and warm ambient light ribbons around the subject. High quality family-friendly movie CGI lighting, subject remains completely safe and untouched, original facial identity and clothes fully preserved.',
     category: 'Motion visual',
     complexity: 'high',
     suggestedCredits: 2,
