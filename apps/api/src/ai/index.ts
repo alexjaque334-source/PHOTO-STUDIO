@@ -197,14 +197,15 @@ export class AiEditServiceImpl implements AiEditService {
 
         const isRetryable = err instanceof DomainError ? (err.details as any)?.retryable === true : false;
 
-        // Se o erro for de recusa de conteúdo (moderação) e houver próximo modelo, tenta fallback com prompt suavizado
+        // Se o erro for de recusa de conteúdo por palavras sensíveis (ex: fogo/chamas), tenta fallback com prompt suavizado
         if (err instanceof DomainError && err.code === 'AI_CONTENT_REFUSED') {
-          if (!isLastAttempt) {
-            const nextModelId = models[i + 1]?.model_id ?? 'próximo';
-            console.warn("[AI Service] Filtro de seguranca. Acionando fallback para proximo modelo com prompt suavizado...");
-            technicalPrompt = technicalPrompt
-              .replace(/fire|flame|burn|fogo|chamas/gi, 'glowing light particles and golden superhero VFX aura')
-              .replace(/pegando fogo/gi, 'enveloped in glowing golden energy aura');
+          const softened = technicalPrompt
+            .replace(/fire|flame|burn|fogo|chamas/gi, 'glowing light particles and golden superhero VFX aura')
+            .replace(/pegando fogo/gi, 'enveloped in glowing golden energy aura');
+
+          if (!isLastAttempt && softened !== technicalPrompt) {
+            console.warn("[AI Service] Filtro de segurança por termo sensível. Suavizando para VFX e tentando próximo modelo...");
+            technicalPrompt = softened;
             continue;
           }
           throw err;

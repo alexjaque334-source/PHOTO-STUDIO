@@ -52,7 +52,7 @@ import { generateThumbnail, convertAndDownload, ExportFormat } from '@/lib/image
 // Frases de inspiração populares em linguagem natural (Português Brasileiro)
 const INSPIRATION_CHIPS = [
   { label: '✨ Retrato profissional de estúdio', prompt: 'Transforme num retrato de estúdio com iluminação suave e acabamento editorial' },
-  { label: '🔥 Corpo com chamas de cinema', prompt: 'Meu corpo pegando fogo com chamas reais e iluminação de cinema' },
+  { label: '⚡ Aura épica de cinema (VFX)', prompt: 'Efeito cinematográfico de super-herói com aura brilhante de energia luminosa e partículas douradas' },
   { label: '👔 Ensaio executivo pro LinkedIn', prompt: 'Deixa minha foto com cara de estúdio profissional executivo para o LinkedIn' },
   { label: '🎂 Aniversário com balões e confetes', prompt: 'Cenário de festa de aniversário com balões dourados, bolo e confetes' },
   { label: '🏖️ Praia paradisíaca no pôr do sol', prompt: 'Muda o fundo para uma praia paradisíaca no pôr do sol dourado' },

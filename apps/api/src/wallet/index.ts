@@ -100,10 +100,116 @@ export function createWalletService(env: Env): WalletService {
     );
   }
 
+  async function releaseInternal(reservationId: string, reason: string): Promise<void> {
+    const res = await db
+      .prepare('SELECT id, user_id, amount, status FROM credit_reservations WHERE id = ?')
+      .bind(reservationId)
+      .first<ReservationRow>();
+
+    if (!res) {
+      throw new DomainError('NOT_FOUND', 'Reserva de créditos não encontrada.', 404);
+    }
+
+    if (res.status === 'released') {
+      return; // Idempotente
+    }
+
+    if (res.status === 'consumed') {
+      throw new DomainError(
+        'ALREADY_CONSUMED',
+        'A reserva já foi consumida definitivamente e não pode ser liberada.',
+        409,
+      );
+    }
+
+    const now = nowIso();
+    const statements = [
+      // 1. Marca reserva como liberada
+      db
+        .prepare(
+          `UPDATE credit_reservations 
+           SET status = 'released', settled_at = ?, release_reason = ? 
+           WHERE id = ? AND status = 'active'`,
+        )
+        .bind(now, reason, reservationId),
+
+      // 2. Devolve o montante bloqueado em reserved
+      db
+        .prepare(
+          `UPDATE wallets 
+           SET reserved = MAX(0, reserved - ?), updated_at = ? 
+           WHERE user_id = ?`,
+        )
+        .bind(res.amount, now, res.user_id),
+
+      // 3. Registra auditoria da liberação no ledger
+      db
+        .prepare(
+          `INSERT INTO credit_transactions (
+            id, user_id, type, amount, reference_type, reference_id, idempotency_key, note, created_at
+          ) VALUES (?, ?, 'release', 0, 'credit_reservation', ?, ?, ?, ?)`,
+        )
+        .bind(
+          newId(),
+          res.user_id,
+          reservationId,
+          `release:${reservationId}`,
+          `Liberação de reserva: ${reason}`,
+          now,
+        ),
+    ];
+
+    await db.batch(statements);
+  }
+
   return {
     async getBalance(userId: string): Promise<WalletBalance> {
-      const wallet = await ensureWallet(userId);
       const now = nowIso();
+
+      // Auto-reconciliação de segurança: estorna reservas órfãs, falhas ou expiradas
+      try {
+        const staleReservations = await db
+          .prepare(
+            `SELECT r.id, r.amount 
+             FROM credit_reservations r
+             LEFT JOIN edit_jobs j ON j.reservation_id = r.id
+             WHERE r.user_id = ? 
+               AND r.status = 'active'
+               AND (
+                 (r.expires_at IS NOT NULL AND r.expires_at <= ?)
+                 OR j.status IN ('failed', 'cancelled')
+                 OR (j.created_at IS NOT NULL AND datetime(j.created_at, '+2 minutes') <= datetime(?))
+               )`,
+          )
+          .bind(userId, now, now)
+          .all<{ id: string; amount: number }>();
+
+        if (staleReservations.results && staleReservations.results.length > 0) {
+          for (const stale of staleReservations.results) {
+            await releaseInternal(stale.id, 'Estorno automático de segurança por não conclusão');
+          }
+        }
+
+        // Sincroniza atomicamente o campo `reserved` da carteira com o total real de reservas ativas
+        const activeSum = await db
+          .prepare(
+            `SELECT COALESCE(SUM(amount), 0) as total_active 
+             FROM credit_reservations 
+             WHERE user_id = ? AND status = 'active'`,
+          )
+          .bind(userId)
+          .first<{ total_active: number }>();
+
+        const trueReserved = activeSum?.total_active ?? 0;
+        await db
+          .prepare('UPDATE wallets SET reserved = ?, updated_at = ? WHERE user_id = ? AND reserved != ?')
+          .bind(trueReserved, now, userId, trueReserved)
+          .run();
+      } catch (reconcileErr) {
+        console.warn('[Wallet] Aviso na auto-reconciliação:', reconcileErr);
+      }
+
+      const wallet = await ensureWallet(userId);
       const inSevenDays = addDays(now, 7);
 
       // Busca lotes que expiram nos próximos 7 dias
@@ -379,65 +485,7 @@ export function createWalletService(env: Env): WalletService {
     },
 
     async release(reservationId: string, reason: string): Promise<void> {
-      const res = await db
-        .prepare('SELECT id, user_id, amount, status FROM credit_reservations WHERE id = ?')
-        .bind(reservationId)
-        .first<ReservationRow>();
-
-      if (!res) {
-        throw new DomainError('NOT_FOUND', 'Reserva de créditos não encontrada.', 404);
-      }
-
-      if (res.status === 'released') {
-        return; // Idempotente
-      }
-
-      if (res.status === 'consumed') {
-        throw new DomainError(
-          'ALREADY_CONSUMED',
-          'A reserva já foi consumida definitivamente e não pode ser liberada.',
-          409,
-        );
-      }
-
-      const now = nowIso();
-      const statements = [
-        // 1. Marca reserva como liberada
-        db
-          .prepare(
-            `UPDATE credit_reservations 
-             SET status = 'released', settled_at = ?, release_reason = ? 
-             WHERE id = ? AND status = 'active'`,
-          )
-          .bind(now, reason, reservationId),
-
-        // 2. Devolve o montante bloqueado em reserved
-        db
-          .prepare(
-            `UPDATE wallets 
-             SET reserved = MAX(0, reserved - ?), updated_at = ? 
-             WHERE user_id = ?`,
-          )
-          .bind(res.amount, now, res.user_id),
-
-        // 3. Registra auditoria da liberação no ledger
-        db
-          .prepare(
-            `INSERT INTO credit_transactions (
-              id, user_id, type, amount, reference_type, reference_id, idempotency_key, note, created_at
-            ) VALUES (?, ?, 'release', 0, 'credit_reservation', ?, ?, ?, ?)`,
-          )
-          .bind(
-            newId(),
-            res.user_id,
-            reservationId,
-            `release:${reservationId}`,
-            `Liberação de reserva: ${reason}`,
-            now,
-          ),
-      ];
-
-      await db.batch(statements);
+      return releaseInternal(reservationId, reason);
     },
 
     async grant(input: {

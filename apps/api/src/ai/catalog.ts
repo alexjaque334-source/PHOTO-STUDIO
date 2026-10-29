@@ -723,26 +723,26 @@ export const COMMANDS_CATALOG: InternalCommand[] = [
   {
     id: 56,
     internalName: 'floating_mirror',
-    intent: 'Criar efeito surreal de espelho gigante flutuando com reflexos coerentes.',
-    userPhrases: ['Me coloca flutuando sobre um espelho', 'Quero um espelho gigante no ar', 'Espelho flutuante', 'Reflexo no espelho suspenso'],
+    intent: 'Criar efeito editorial artístico de reflexo sofisticado em espelho com iluminação de estúdio.',
+    userPhrases: ['Efeito editorial com reflexo artístico em espelho', 'Espelho editorial com reflexo de revista', 'Reflexo artístico em espelho flutuante', 'Foto de revista com espelho reflexivo'],
     technicalPrompt:
-      'Create a surreal composition with a massive floating reflective mirror, physically accurate raytraced reflections, realistic perspective tilt, cinematic light bounce, and original subject fully preserved.',
+      'High-fashion magazine editorial photography: Elegant floating framed mirror reflecting gentle studio softbox lighting, pristine clean reflections, artistic commercial portrait composition, original subject completely preserved and radiant.',
     category: 'Motion visual',
     complexity: 'high',
     suggestedCredits: 2,
-    tags: ['espelho', 'flutuando', 'espelho gigante', 'reflexo', 'surreal'],
+    tags: ['espelho', 'editorial', 'reflexo', 'revista', 'estudio'],
   },
   {
     id: 57,
     internalName: 'body_fire',
-    intent: 'Criar efeito cinematográfico de aura de energia luminosa e partículas brilhantes estilo cinema.',
-    userPhrases: ['Quero meu corpo pegando fogo', 'Me coloca com chamas nos braços', 'Fogo no corpo', 'Efeito de fogo cinematográfico', 'Aura mágica de energia'],
+    intent: 'Criar efeito cinematográfico de aura brilhante de energia luminosa e partículas estilo super-herói de cinema.',
+    userPhrases: ['Efeito de super-herói com aura brilhante de energia luminosa', 'Aura de energia mágica dourada ao redor do corpo', 'Efeito de partículas brilhantes de cinema', 'Efeito especial de super-herói com luzes mágicas', 'Quero meu corpo pegando fogo', 'Fogo no corpo'],
     technicalPrompt:
       'Cinematic fantasy superhero visual effect (VFX): Harmless magical glowing golden energy aura, floating luminous sparks, and warm ambient light ribbons around the subject. High quality family-friendly movie CGI lighting, subject remains completely safe and untouched, original facial identity and clothes fully preserved.',
     category: 'Motion visual',
     complexity: 'high',
     suggestedCredits: 2,
-    tags: ['fogo', 'chamas', 'pegando fogo', 'brasas', 'incandescente', 'fire'],
+    tags: ['aura', 'energia', 'vfx', 'particulas', 'super-heroi', 'magia', 'fogo', 'chamas'],
   },
   {
     id: 58,

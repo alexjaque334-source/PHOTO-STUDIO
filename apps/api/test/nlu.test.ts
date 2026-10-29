@@ -192,7 +192,7 @@ describe('Motor de NLU — Interpretação Automática de Linguagem Natural', ()
       // O prompt técnico consolidado deve incluir instruções de gravidade, espelho e chamas
       expect(res.consolidatedTechnicalPrompt.toLowerCase()).toContain('gravit');
       expect(res.consolidatedTechnicalPrompt.toLowerCase()).toContain('mirror');
-      expect(res.consolidatedTechnicalPrompt.toLowerCase()).toContain('fire');
+      expect(res.consolidatedTechnicalPrompt.toLowerCase()).toContain('aura');
 
       // Resumo amigável em português
       expect(typeof res.humanFriendlySummary).toBe('string');

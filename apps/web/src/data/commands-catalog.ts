@@ -1306,48 +1306,48 @@ export const COCKPIT_COMMANDS: CockpitCommand[] = [
   {
     "id": 56,
     "internalName": "floating_mirror",
-    "title": "Espelho Surrealista Mágico",
-    "intent": "Criar efeito surreal de espelho gigante flutuando com reflexos coerentes.",
-    "userPhrase": "Me coloca flutuando sobre um espelho",
+    "title": "Espelho Editorial Artístico",
+    "intent": "Criar efeito editorial artístico de reflexo sofisticado em espelho com iluminação de estúdio.",
+    "userPhrase": "Efeito editorial com reflexo artístico em espelho",
     "allPhrases": [
-      "Me coloca flutuando sobre um espelho",
-      "Quero um espelho gigante no ar",
-      "Espelho flutuante",
-      "Reflexo no espelho suspenso"
+      "Efeito editorial com reflexo artístico em espelho",
+      "Espelho editorial com reflexo de revista",
+      "Reflexo artístico em espelho flutuante",
+      "Foto de revista com espelho reflexivo"
     ],
     "category": "Motion visual",
     "complexity": "high",
     "credits": 2,
     "tags": [
       "espelho",
-      "flutuando",
-      "espelho gigante",
+      "editorial",
       "reflexo",
-      "surreal"
+      "revista",
+      "estudio"
     ]
   },
   {
     "id": 57,
     "internalName": "body_fire",
-    "title": "Chamas Cinematográficas & Efeito Épico",
-    "intent": "Criar efeito fantástico de chamas cinematográficas envolvendo o corpo.",
-    "userPhrase": "Quero meu corpo pegando fogo",
+    "title": "Aura de Energia VFX & Efeito Épico",
+    "intent": "Criar efeito cinematográfico de aura brilhante de energia luminosa e partículas estilo super-herói de cinema.",
+    "userPhrase": "Efeito de super-herói com aura brilhante de energia luminosa",
     "allPhrases": [
-      "Quero meu corpo pegando fogo",
-      "Me coloca com chamas nos braços",
-      "Fogo no corpo",
-      "Efeito de fogo cinematográfico"
+      "Efeito de super-herói com aura brilhante de energia luminosa",
+      "Aura de energia mágica dourada ao redor do corpo",
+      "Efeito de partículas brilhantes de cinema",
+      "Efeito especial de super-herói com luzes mágicas"
     ],
     "category": "Motion visual",
     "complexity": "high",
     "credits": 2,
     "tags": [
-      "fogo",
-      "chamas",
-      "pegando fogo",
-      "brasas",
-      "incandescente",
-      "fire"
+      "aura",
+      "energia",
+      "vfx",
+      "particulas",
+      "super-heroi",
+      "magia"
     ]
   },
   {
