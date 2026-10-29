@@ -92,6 +92,11 @@ export function createStorageService(env: Env): StorageService {
           created_at TEXT NOT NULL
         )`,
       ).run();
+      try {
+        await env.DB.prepare(`ALTER TABLE media_blobs ADD COLUMN is_chunked INTEGER DEFAULT 0`).run();
+      } catch {
+        // Coluna já existe no D1 ou foi criada pelo DDL acima
+      }
       await env.DB.prepare(
         `CREATE TABLE IF NOT EXISTS media_chunks (
           key TEXT NOT NULL,
