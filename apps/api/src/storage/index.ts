@@ -85,15 +85,24 @@ export function createStorageService(env: Env): StorageService {
       await env.DB.prepare(
         `CREATE TABLE IF NOT EXISTS media_blobs (
           key TEXT PRIMARY KEY,
-          bytes BLOB NOT NULL,
+          bytes BLOB,
           mime TEXT NOT NULL,
           size_bytes INTEGER NOT NULL,
+          is_chunked INTEGER DEFAULT 0,
           created_at TEXT NOT NULL
+        )`,
+      ).run();
+      await env.DB.prepare(
+        `CREATE TABLE IF NOT EXISTS media_chunks (
+          key TEXT NOT NULL,
+          chunk_index INTEGER NOT NULL,
+          data BLOB NOT NULL,
+          PRIMARY KEY (key, chunk_index)
         )`,
       ).run();
       tableEnsured = true;
     } catch (e) {
-      console.warn('[Storage] Aviso ao criar tabela media_blobs no D1:', e);
+      console.warn('[Storage] Aviso ao criar tabelas media_blobs/media_chunks no D1:', e);
     }
   }
 
@@ -108,15 +117,42 @@ export function createStorageService(env: Env): StorageService {
         return;
       }
 
-      // Fallback D1 (Gratuito, sem necessidade de R2 nem cartão de crédito)
+      // Fallback D1 (Com chunking inteligente de 800KB para suportar fotos de alta definição sem limite de 2MB)
       await ensureD1MediaTable();
       const u8 = new Uint8Array(bytes);
-      await env.DB.prepare(
-        `INSERT OR REPLACE INTO media_blobs (key, bytes, mime, size_bytes, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-      )
-        .bind(key, u8, mime, bytes.byteLength, new Date().toISOString())
-        .run();
+      const CHUNK_SIZE = 800 * 1024; // 800 KB por chunk (garante segurança máxima no D1)
+
+      if (bytes.byteLength > 1_200_000) {
+        const totalChunks = Math.ceil(bytes.byteLength / CHUNK_SIZE);
+        const now = new Date().toISOString();
+        const statements: any[] = [
+          env.DB.prepare(
+            `INSERT OR REPLACE INTO media_blobs (key, bytes, mime, size_bytes, is_chunked, created_at)
+             VALUES (?, NULL, ?, ?, 1, ?)`,
+          ).bind(key, mime, bytes.byteLength, now),
+          env.DB.prepare('DELETE FROM media_chunks WHERE key = ?').bind(key),
+        ];
+
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, bytes.byteLength);
+          const chunkData = u8.subarray(start, end);
+          statements.push(
+            env.DB.prepare(
+              'INSERT INTO media_chunks (key, chunk_index, data) VALUES (?, ?, ?)',
+            ).bind(key, i, chunkData),
+          );
+        }
+
+        await env.DB.batch(statements);
+      } else {
+        await env.DB.prepare(
+          `INSERT OR REPLACE INTO media_blobs (key, bytes, mime, size_bytes, is_chunked, created_at)
+           VALUES (?, ?, ?, ?, 0, ?)`,
+        )
+          .bind(key, u8, mime, bytes.byteLength, new Date().toISOString())
+          .run();
+      }
     },
 
     async getObject(key: string): Promise<{ bytes: ArrayBuffer; mime: string } | null> {
@@ -130,11 +166,38 @@ export function createStorageService(env: Env): StorageService {
 
       // Fallback D1
       await ensureD1MediaTable();
-      const row = await env.DB.prepare('SELECT bytes, mime FROM media_blobs WHERE key = ?')
+      const row = await env.DB.prepare('SELECT bytes, mime, is_chunked, size_bytes FROM media_blobs WHERE key = ?')
         .bind(key)
-        .first<{ bytes: Uint8Array | number[] | ArrayBuffer; mime: string }>();
+        .first<{ bytes: Uint8Array | number[] | ArrayBuffer | null; mime: string; is_chunked?: number; size_bytes?: number }>();
 
-      if (!row || !row.bytes) return null;
+      if (!row) return null;
+
+      if (row.is_chunked === 1) {
+        const chunks = await env.DB.prepare('SELECT data FROM media_chunks WHERE key = ? ORDER BY chunk_index ASC')
+          .bind(key)
+          .all<{ data: Uint8Array | number[] }>();
+
+        const totalSize = row.size_bytes || 0;
+        const fullBytes = new Uint8Array(totalSize);
+        let offset = 0;
+
+        for (const c of (chunks.results || [])) {
+          let chunkU8: Uint8Array;
+          if (ArrayBuffer.isView(c.data)) {
+            chunkU8 = new Uint8Array(c.data.buffer, c.data.byteOffset, c.data.byteLength);
+          } else if (Array.isArray(c.data)) {
+            chunkU8 = new Uint8Array(c.data);
+          } else {
+            chunkU8 = new Uint8Array(c.data as any);
+          }
+          fullBytes.set(chunkU8, offset);
+          offset += chunkU8.byteLength;
+        }
+
+        return { bytes: fullBytes.buffer, mime: row.mime || 'application/octet-stream' };
+      }
+
+      if (!row.bytes) return null;
 
       let buf: ArrayBuffer;
       if (row.bytes instanceof ArrayBuffer) {
@@ -176,6 +239,9 @@ export function createStorageService(env: Env): StorageService {
       const res = await env.DB.prepare("DELETE FROM media_blobs WHERE key LIKE ? || '%'")
         .bind(prefix)
         .run();
+      await env.DB.prepare("DELETE FROM media_chunks WHERE key LIKE ? || '%'")
+        .bind(prefix)
+        .run();
       return res.meta?.changes ?? 0;
     },
 
@@ -191,6 +257,7 @@ export function createStorageService(env: Env): StorageService {
       await ensureD1MediaTable();
       for (const k of keys) {
         await env.DB.prepare('DELETE FROM media_blobs WHERE key = ?').bind(k).run();
+        await env.DB.prepare('DELETE FROM media_chunks WHERE key = ?').bind(k).run();
       }
     },
 

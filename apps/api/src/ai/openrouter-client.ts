@@ -61,7 +61,7 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * Converte string base64 para ArrayBuffer.
  */
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const clean = base64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').trim();
+  const clean = base64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').replace(/[\r\n\s]+/g, '').trim();
   const binary = atob(clean);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -116,7 +116,7 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
   // 1. Formato OpenRouter Images API: { data: [{ b64_json: '...' }] } ou { data: [{ url: '...' }] }
   if (Array.isArray(json.data) && json.data.length > 0) {
     const item = json.data[0];
-    if (item.b64_json) return { type: 'base64', data: item.b64_json };
+    if (item.b64_json || item.base64 || item.image) return { type: 'base64', data: item.b64_json || item.base64 || item.image };
     if (item.url) return { type: 'url', data: item.url };
   }
 
@@ -141,8 +141,8 @@ export function extractImageFromOpenRouterResponse(json: any): { type: 'base64' 
           if (img.startsWith('data:image/')) return { type: 'base64', data: img };
           return { type: 'url', data: img };
         }
-        if (img.b64_json) {
-          return { type: 'base64', data: img.b64_json };
+        if (img.b64_json || img.base64 || img.image) {
+          return { type: 'base64', data: img.b64_json || img.base64 || img.image };
         }
         const candidateUrl = img.image_url?.url || img.image_url || img.url;
         if (typeof candidateUrl === 'string' && candidateUrl) {
@@ -271,9 +271,16 @@ export class OpenRouterClient {
       });
     }
 
+    const systemInstruction = {
+      role: 'system',
+      content:
+        'You are an expert AI photo generator and precision image editor. You must generate and return the edited image adhering strictly to the user instructions and photographic realism. Do not return conversational descriptions in place of the image.',
+    };
+
     const payload = {
       model: opts.modelId,
       messages: [
+        systemInstruction,
         {
           role: 'user',
           content: contentArray,

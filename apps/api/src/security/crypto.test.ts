@@ -67,8 +67,9 @@ describe('crypto utils', () => {
     const env = { DATA_ENCRYPTION_KEY: TEST_KEY_B64 };
     const ciphertext = await encrypt(env, 'dados-autenticados');
     const parts = ciphertext.split('.');
-    // Modifica o último caractere do payload
-    const tampered = `${parts[0]}.${parts[1]}.${parts[2]!.slice(0, -1)}A`;
+    // Modifica o primeiro caractere do payload para garantir que o ciphertext/tag seja adulterado
+    const tamperedChar = parts[2]![0] === 'A' ? 'B' : 'A';
+    const tampered = `${parts[0]}.${parts[1]}.${tamperedChar}${parts[2]!.slice(1)}`;
 
     await expect(decrypt(env, tampered)).rejects.toThrow();
   });

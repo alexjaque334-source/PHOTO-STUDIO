@@ -1,6 +1,6 @@
 # ALEGON AI Photo Studio — Relatório de Avaliação do Motor de IA
 
-> Data de Execução: 2026-10-28T15:15:56.576Z
+> Data de Execução: 2026-10-29T14:01:58.580Z
 > Total de Casos Avaliados: **30** | Aprovados: **30** | Falhas: **0**
 > Taxa de Sucesso da Suíte: **100.0%**
 
@@ -10,20 +10,20 @@
 
 | ID | Categoria | Ferramenta | Tier | Modelo Alvo | Custo (Créditos) | Status | Duração |
 |---|---|---|---|---|---|---|---|
-| `rem-01` | removal | `remove_people` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 4ms |
+| `rem-01` | removal | `remove_people` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 1ms |
 | `rem-02` | removal | `remove_people` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `rem-03` | removal | `remove_objects` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `rem-04` | removal | `remove_objects` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `rem-05` | removal | `remove_objects` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
 | `rem-06` | removal | `remove_objects` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `rem-07` | removal | `remove_people` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
-| `rem-08` | removal | `remove_objects` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
+| `rem-08` | removal | `remove_objects` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 1ms |
 | `rem-09` | removal | `remove_objects` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `rem-10` | removal | `remove_objects` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `bg-01` | background | `replace_background` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `bg-02` | background | `remove_background` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `bg-03` | background | `transparent_background` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
-| `bg-04` | background | `replace_background` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 1ms |
+| `bg-04` | background | `replace_background` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
 | `bg-05` | background | `replace_background` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `bg-06` | background | `replace_background` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `bg-07` | background | `replace_background` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
@@ -38,7 +38,7 @@
 | `com-06` | commercial_portrait | `restore_photo` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `com-07` | commercial_portrait | `improve_colors` | `economico` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
 | `com-08` | commercial_portrait | `replace_elements` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
-| `com-09` | commercial_portrait | `add_elements` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 0ms |
+| `com-09` | commercial_portrait | `add_elements` | `padrao` | `google/gemini-2.5-flash-image` | 1 | ✅ PASS | 1ms |
 | `com-10` | commercial_portrait | `variations` | `premium` | `google/gemini-3-pro-image` | 2 | ✅ PASS | 0ms |
 
 ---
