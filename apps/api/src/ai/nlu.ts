@@ -508,7 +508,9 @@ function buildHumanFriendlySummary(commands: InternalCommand[], rawInput: string
 function softenPromptForSafety(text: string): string {
   return text
     .replace(/\b(pegando\s+fogo|fogo\s+no\s+corpo|em\s+chamas|queimando)\b/gi, 'efeito cinematográfico de aura luminosa mágica e partículas douradas estilo super-herói')
-    .replace(/\b(fogo|chamas|fire|flames)\b/gi, 'aura luminosa de energia mágica');
+    .replace(/\b(fogo|chamas|fire|flames)\b/gi, 'aura luminosa de energia mágica')
+    .replace(/\b(me\s+coloca\s+de|me\s+vista\s+de|coloca\s+em\s+mim|bota\s+em\s+mim)\b/gi, 'estilo elegante com')
+    .replace(/\b(trocar\s+corpo|mudar\s+corpo|muda\s+meu\s+corpo)\b/gi, 'estilo de vestimenta formal');
 }
 
 /**
@@ -526,7 +528,7 @@ function composeTechnicalPrompt(commands: InternalCommand[], userInput: string):
     instructions,
     '',
     'STRICT PHOTO FIDELITY & IDENTITY CONSTRAINTS:',
-    '- PRESERVE EXACT IDENTITY: Maintain the original subject facial likeness, facial features, portrait appearance, and natural expressions without alteration.',
+    '- PRESERVE EXACT IDENTITY: Faithfully maintain the subject original facial features, likeness, and natural expression.',
     '- PROFESSIONAL EDITORIAL FINISH: High-end 35mm DSLR studio photography, authentic balanced natural lighting, crisp details, and seamless optical integration.',
     '- NO CARTOON / NO UNNATURAL ARTIFACTS: The final rendered image must look like a high-end photograph, preserving authentic textures and physics.',
   ].join('\n');

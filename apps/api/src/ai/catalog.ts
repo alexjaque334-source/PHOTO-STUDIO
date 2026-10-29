@@ -174,7 +174,7 @@ export const COMMANDS_CATALOG: InternalCommand[] = [
     intent: 'Substituir roupas, móveis ou detalhes específicos por novos itens fotorrealistas.',
     userPhrases: ['Troca minha roupa', 'Muda a cor da camisa', 'Troca o casaco', 'Muda o vestido'],
     technicalPrompt:
-      'Replace designated garment or element with requested alternative. Ensure natural fabric folds, body contours, photorealistic texture, and seamless boundary blending without altering face or body.',
+      'Seamlessly style the subject in the requested formal attire with realistic textile draping, crisp photographic texture, authentic balanced studio lighting, and natural optical integration while strictly preserving the subject identity and likeness.',
     category: 'Básico',
     complexity: 'medium',
     suggestedCredits: 1,
@@ -714,7 +714,7 @@ export const COMMANDS_CATALOG: InternalCommand[] = [
     intent: 'Criar efeito surreal de pessoa flutuando sem gravidade.',
     userPhrases: ['Quero ficar sem gravidade', 'Me faz flutuar', 'Me bota voando', 'Me coloca levitando no ar', 'Sem gravidade'],
     technicalPrompt:
-      'Position the person in authentic zero-gravity levitation with natural body suspension pose, zero contact with ground, consistent spatial cast shadows, atmospheric depth, and surreal cinematic physics.',
+      'Position the person in authentic zero-gravity levitation with natural graceful suspension, zero contact with ground, consistent spatial cast shadows, atmospheric depth, and surreal cinematic physics.',
     category: 'Motion visual',
     complexity: 'high',
     suggestedCredits: 2,

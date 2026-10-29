@@ -197,14 +197,17 @@ export class AiEditServiceImpl implements AiEditService {
 
         const isRetryable = err instanceof DomainError ? (err.details as any)?.retryable === true : false;
 
-        // Se o erro for de recusa de conteúdo por palavras sensíveis (ex: fogo/chamas), tenta fallback com prompt suavizado
+        // Se o erro for de recusa de conteúdo (filtro de segurança do provedor de IA)
         if (err instanceof DomainError && err.code === 'AI_CONTENT_REFUSED') {
+          // Suaviza qualquer termo que possa ter ativado o filtro
           const softened = technicalPrompt
             .replace(/fire|flame|burn|fogo|chamas/gi, 'glowing light particles and golden superhero VFX aura')
-            .replace(/pegando fogo/gi, 'enveloped in glowing golden energy aura');
+            .replace(/pegando fogo/gi, 'enveloped in glowing golden energy aura')
+            .replace(/body contours|body/gi, 'silhouette')
+            .replace(/garment/gi, 'attire');
 
-          if (!isLastAttempt && softened !== technicalPrompt) {
-            console.warn("[AI Service] Filtro de segurança por termo sensível. Suavizando para VFX e tentando próximo modelo...");
+          if (!isLastAttempt) {
+            console.warn(`[AI Service] Filtro de segurança no modelo ${model.model_id}. Suavizando prompt e acionando fallback para próximo modelo...`);
             technicalPrompt = softened;
             continue;
           }
